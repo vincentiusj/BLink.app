@@ -30,6 +30,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^0.13.3
+  sqflite: ^2.0.0+3
+  shared_preferences: ^2.0.10
+  logger: ^2.0.0
+  path_provider: ^2.0.5
+  google_maps_flutter: ^2.2.0
+  google_maps_webservice: ^0.0.13
+  intl: ^0.17.0
+  flutter_bloc: ^8.0.0
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -57,6 +66,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/images/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
