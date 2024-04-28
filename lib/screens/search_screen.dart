@@ -47,106 +47,21 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-          children: [
-            const SizedBox(height: 16),
-            _generateStartEndSearchField(),
-            _generateMapsView(),
-            _generateBusArrivalList()
-          ]
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+        child: Column(
+            children: [
+              const SizedBox(height: 16),
+              _buildStartEndSearchField(),
+              SizedBox(height: 10.0),
+              _buildMapsView(),
+              _buildBusArrivalListView()
+            ]
+        ),
       )
     );
   }
 
-  Padding _generateStartEndSearchField(){
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Choose Your Route',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16.0),
-          FutureBuilder(
-              future: DatabaseHelper.getAllStops(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Error: ${snapshot.error}'),
-                  );
-                } else {
-                  List<Stop>? stopList = snapshot.data;
-                  return Column(
-                    children: stopList != null
-                    ? [
-                      _generateOriginField(stopList),
-                      const SizedBox(height: 16.0),
-                      _generateDestinationField(stopList)
-                    ] : [
-                      Text('StopList not found')
-                    ]
-                  );
-                }
-              }
-          ),
-        ],
-      ),
-    );
-
-  }
-
-  Expanded _generateMapsView(){
-    var originLatitude = double.tryParse(origin?.latitude ?? '0.0') ?? 0.0;
-    var originLongitude = double.tryParse(origin?.longitude ?? '0.0') ?? 0.0;
-    var destinationLatitude = double.tryParse(destination?.latitude ?? '0.0') ?? 0.0;
-    var destinationLongitude = double.tryParse(destination?.longitude ?? '0.0') ?? 0.0;
-
-      return Expanded(
-        child: (origin != null && destination != null)
-            ?
-        Container(
-            color: Colors.grey[300],
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(originLatitude, originLongitude),
-                zoom: 12.0,
-              ),
-              onMapCreated: (controller) {
-                logger.d('onMapCreated');
-                mapController = controller;
-              },
-              trafficEnabled: true,
-              mapType: MapType.satellite,
-              markers: {
-                Marker(
-                  markerId: MarkerId(origin!.stopId),
-                  position: LatLng(originLatitude, originLongitude),
-                  infoWindow: InfoWindow(title: origin?.stopName),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan)
-                ),
-                Marker(
-                  markerId: MarkerId(destination!.stopId),
-                  position: LatLng(destinationLatitude, destinationLongitude),
-                  infoWindow: InfoWindow(title: destination?.stopName),
-                ),
-              },
-              myLocationEnabled: true,
-            ),
-
-        )
-            : const Center(child: CircularProgressIndicator())
-      );
-  }
 
   @override
   void dispose() {
@@ -154,7 +69,61 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  DropdownButtonFormField<String> _generateOriginField(List<Stop>? stopList) {
+  Widget _buildStartEndSearchField(){
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Where to?',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w400,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 10.0),
+        FutureBuilder(
+            future: DatabaseHelper.getAllStops(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error: ${snapshot.error}'),
+                );
+              } else {
+                List<Stop>? stopList = snapshot.data;
+                return Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildOriginFieldView(stopList),
+                        _buildDestinationFieldView(stopList)
+                      ],
+                    )
+                );
+              }
+            }
+        ),
+      ],
+    );
+  }
+
+  DropdownButtonFormField<String> _buildOriginFieldView(List<Stop>? stopList) {
     // List<String>? stopNames = stopList?.map((stop) => stop.stopName).toList();
     logger.d('SearchScreen stoplist $stopList}');
 
@@ -162,8 +131,8 @@ class _SearchScreenState extends State<SearchScreen> {
       value: origin?.stopId,
       decoration: const InputDecoration(
         labelText: 'Start',
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
+        border: InputBorder.none,
+        prefixIcon: Icon(Icons.location_on, color: Colors.orange),
       ),
       items: stopList
           ?.map((Stop value) {
@@ -181,7 +150,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  DropdownButtonFormField<String> _generateDestinationField(List<Stop>? stopList) {
+  DropdownButtonFormField<String> _buildDestinationFieldView(List<Stop>? stopList) {
     // List<String>? stopNames = stopList?.map((stop) => stop.stopName).toList();
     logger.d('SearchScreen stoplist $stopList}');
 
@@ -189,8 +158,8 @@ class _SearchScreenState extends State<SearchScreen> {
       value: destination?.stopId,
       decoration: const InputDecoration(
         labelText: 'Destination',
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.0),
+        border: InputBorder.none,
+        prefixIcon: Icon(Icons.location_on, color: Colors.orange),
       ),
       items: stopList
           ?.map((Stop value) {
@@ -208,7 +177,88 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Expanded _generateBusArrivalList() {
+  Expanded _buildMapsView(){
+    var originLatitude = double.tryParse(origin?.latitude ?? '0.0') ?? 0.0;
+    var originLongitude = double.tryParse(origin?.longitude ?? '0.0') ?? 0.0;
+    var destinationLatitude = double.tryParse(destination?.latitude ?? '0.0') ?? 0.0;
+    var destinationLongitude = double.tryParse(destination?.longitude ?? '0.0') ?? 0.0;
+
+    return Expanded(
+        child: (origin != null && destination != null)
+            ?
+        Container(
+          color: Colors.grey[300],
+          child: GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: LatLng(originLatitude, originLongitude),
+              zoom: 12.0,
+            ),
+            onMapCreated: (controller) {
+              logger.d('onMapCreated');
+              mapController = controller;
+            },
+            trafficEnabled: true,
+            mapType: MapType.satellite,
+            markers: {
+              Marker(
+                  markerId: MarkerId(origin!.stopId),
+                  position: LatLng(originLatitude, originLongitude),
+                  infoWindow: InfoWindow(title: origin?.stopName),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan)
+              ),
+              Marker(
+                markerId: MarkerId(destination!.stopId),
+                position: LatLng(destinationLatitude, destinationLongitude),
+                infoWindow: InfoWindow(title: destination?.stopName),
+              ),
+            },
+            myLocationEnabled: true,
+          ),
+
+        )
+            : const Center(child: CircularProgressIndicator())
+    );
+  }
+
+  Widget _buildBusArrivalListView() {
+    return FutureBuilder(
+        future: DatabaseHelper.getAllStops(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text('Error: ${snapshot.error}'),
+            );
+          } else {
+            List<Stop>? stopList = snapshot.data;
+            return Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildOriginFieldView(stopList),
+                    _buildDestinationFieldView(stopList)
+                  ],
+                )
+            );
+          }
+        }
+    );
+
     return Expanded(
       child: (origin != null && destination != null)
           ?
@@ -246,6 +296,10 @@ class _SearchScreenState extends State<SearchScreen> {
     );
 
   }
+
+
+
+
 
 
 

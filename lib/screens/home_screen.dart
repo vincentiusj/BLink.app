@@ -2,99 +2,65 @@ import 'dart:convert';
 
 import 'package:blink_application/models/GlobalConstants.dart';
 import 'package:blink_application/models/user_model.dart';
-import 'package:blink_application/repository/user_data.dart';
 import 'package:blink_application/res/strings.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/place_model.dart';
 import '../repository/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final User loggedInUser;
+
+  const HomeScreen({Key? key, required this.loggedInUser}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late ScrollController _scrollController;
-  // final bloc = BlocProvider.of<BlocType>(context);
 
   @override
   void initState() {
-    _scrollController = ScrollController();
-      // ..addListener(() {
-      //   context.bloc<>().setOffset(_scrollController.offset);
-      // });
     super.initState();
   }
   @override
   Widget build(BuildContext context) {
+    var user = widget.loggedInUser;
+
     return Scaffold(
-      appBar: AppBar(
-        flexibleSpace: Center(
-          child: Image.asset('assets/images/logo_blink_app.png'),
-        ),
-      ),
-      body: FutureBuilder<User?>(
-        future: _getUserInfo(),
-        builder: (context, snapshot) {
-          logger.d('HomeScreen connectionState ${snapshot.connectionState}');
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
-          } else {
-            User? user = snapshot.data;
-            logger.d('HomeScreen user $user}');
-            if (user != null) {
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text('Hi, ${user.fullName}',
-                        style: const TextStyle(fontSize: 16.0)),
-                    const Text('Go somewhere?',
-                        style: TextStyle(fontSize: 20.0)),
-                    const SizedBox(height: 10.0),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: (){
-                          navigateToSearchScreen();
-                        },
-                        child: const Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.orangeAccent),
-                            SizedBox(width: 8.0),
-                            Text(
-                              'Search bus stop destination',
-                              style: TextStyle(color: Colors.orangeAccent)
-                            )
-                          ],
-                        ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Hi, ${user.fullName}',
+                style: const TextStyle(fontSize: 16.0)),
+            const Text('Go somewhere?',
+                style: TextStyle(fontSize: 20.0)),
+            const SizedBox(height: 10.0),
+            SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: (){
+                    navigateToSearchScreen();
+                  },
+                  child: const Row(
+                    children: [
+                      Icon(Icons.search, color: Colors.orangeAccent),
+                      SizedBox(width: 8.0),
+                      Text(
+                          'Search bus stop destination',
+                          style: TextStyle(color: Colors.orangeAccent)
                       )
-                    ),
-                    const SizedBox(height: 10.0),
-                    const Text('Places For You', style: TextStyle(fontSize: 20.0)),
-                    _generatePlaceListView(),
-                    const SizedBox(height: 20.0),
-                  ],
-                ),
-              );
-            } else {
-              return const Center(
-                child: Text('User not found'),
-              );
-            }
-          }
-        },
-      ),
+                    ],
+                  ),
+                )
+            ),
+            const SizedBox(height: 10.0),
+            const Text('Places For You', style: TextStyle(fontSize: 20.0)),
+            _generatePlaceListView(),
+          ],
+        ),
+      )
     );
   }
 
@@ -123,8 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 } else {
                   List<Place> placeList = [Place(placeId: 'place123', placeImage:  imageSrcBase64, stopId: 'stop123', placeName: 'Wisma BCA Foresta', placeDesc: 'This is Wisma')];
                   return _generatePlaceCards(placeList);
-
-                  return const Center(child: CircularProgressIndicator());
                 }
               }
             }
@@ -175,11 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         )
     );
-
   }
-
-
-
 
   Future<List<Place>?> _getPlaceList() async {
     try {
@@ -188,20 +148,6 @@ class _HomeScreenState extends State<HomeScreen> {
       List<Place> placeList = jsonResponse.map((json) => Place.fromJson(json)).toList();
 
       return placeList;
-    } catch (e) {
-      print('Get user info failed: $e');
-    }
-  }
-
-  Future<User?> _getUserInfo() async {
-    Map<String, String?> loggedInUserKey = await getLoggedInUserKey();
-    print('login $loggedInUserKey');
-    try {
-      var jsonResponse = await ApiService.getUserInfo(
-        userId: loggedInUserKey['userId']!,
-        role: loggedInUserKey['role']!,
-      );
-      return User.fromJson(jsonResponse);
     } catch (e) {
       print('Get user info failed: $e');
     }

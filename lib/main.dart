@@ -4,7 +4,6 @@ import 'package:blink_application/screens/screens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:blink_application/repository/user_data.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'models/GlobalConstants.dart';
 import 'models/user_model.dart';
@@ -42,8 +41,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-
-
   // Method to handle successful login
   void onLoginSuccess() {
     logger.d('onLoginSuccess');
@@ -62,8 +59,7 @@ class _MyAppState extends State<MyApp> {
         '/': (context) => isAuthenticated ? NavScreen(loggedInUser: loggedInUser!) : SplashScreen(),
         '/login': (context) => LoginScreen(onLoginSuccess: onLoginSuccess),
         '/register': (context) => RegistrationScreen(),
-        '/search': (context) => SearchScreen(),
-        '/stops': (context) => SearchScreen()
+        '/search': (context) => SearchScreen()
       },
       navigatorObservers: [MyNavigatorObserver()],
       theme: ThemeData(

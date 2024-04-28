@@ -7,7 +7,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/user_model.dart';
 import '../repository/api_service.dart';
-import '../repository/user_data.dart';
 
 class NavScreen extends StatefulWidget {
   final User loggedInUser;
@@ -22,21 +21,25 @@ class _NavScreenState extends State<NavScreen> {
   int _selectedIndex = 0;
   bool _tappedIn = false;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const StopsScreen(),
-    // const EmergencyScreen(),
-    // const ProfleScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     // return const Placeholder();
+
     return Scaffold(
+      appBar: AppBar(
+        flexibleSpace: Center(
+          child: Image.asset('assets/images/logo_blink_app.png'),
+        ),
+      ),
       resizeToAvoidBottomInset: false,
       body: IndexedStack(
         index: _selectedIndex,
-        children: _screens,
+        children: [
+          HomeScreen(loggedInUser: widget.loggedInUser),
+          const StopsScreen(),
+          const EmergencyScreen(),
+          ProfileScreen(loggedInUser: widget.loggedInUser)
+        ],
       ),
       bottomNavigationBar: BottomAppBar(
         shape: CircularNotchedRectangle(),
@@ -83,7 +86,6 @@ class _NavScreenState extends State<NavScreen> {
                 });
               },
               color: _selectedIndex == 3 ? Colors.white : AppColors.teaBrown,
-
             ),
           ],
         ),
@@ -96,7 +98,7 @@ class _NavScreenState extends State<NavScreen> {
             builder: (BuildContext context) {
               return AlertDialog(
                 title: Text('Confirmation'),
-                content: _tappedIn ? Text('Successful Tap In!\n Tap out now?') : Text('TsourAP IN'),
+                content: _tappedIn ? Text('Successful Tap In!\n Tap out now?') : Text('TAP IN'),
                 actions: <Widget>[
                   IconButton(
                     icon: Icon(Icons.cancel),

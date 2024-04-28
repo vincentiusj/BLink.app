@@ -27,11 +27,6 @@ class _StopsScreenState extends State<StopsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        flexibleSpace: Center(
-          child: Image.asset('assets/images/logo_blink_app.png'),
-        ),
-      ),
       body: FutureBuilder(
           future: DatabaseHelper.getAllRoutes(),
           builder: (context, snapshot) {

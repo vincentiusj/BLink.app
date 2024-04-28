@@ -16,11 +16,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        flexibleSpace: Center(
-          child: Image.asset('assets/images/logo_blink_app.png'),
-        ),
-      ),
+
     );
   }
 }

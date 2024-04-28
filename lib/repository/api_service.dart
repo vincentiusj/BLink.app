@@ -44,6 +44,7 @@ class ApiService {
     final url = Uri.parse(baseUrl + 'register');
     final requestBody = jsonEncode({
       'full_name': fullName,
+      'phone_number': phoneNumber,
       'email': email,
       'password': password,
       'role': "PASSENGER",
