@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../models/GlobalConstants.dart';
 import '../models/user_model.dart';
+import '../repository/user_data.dart';
 
 
 class ProfileScreen extends StatefulWidget {
   final User loggedInUser;
+  final VoidCallback onLogout;
 
-  const ProfileScreen({Key? key, required this.loggedInUser}) : super(key: key);
+  const ProfileScreen({Key? key, required this.loggedInUser, required this.onLogout}) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -85,7 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               SizedBox(height: 20.0),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   ElevatedButton(
                     onPressed: () {
@@ -102,14 +105,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Icon(Icons.edit, color: Colors.orangeAccent, size: 17),
                         SizedBox(width: 5.0),
-                        Text('Edit Profile', style: TextStyle(fontSize: 12))
+                        Text('Edit Profile', style: TextStyle(fontSize: 13))
                       ],
                     ),
                   ),
                   SizedBox(width: 10.0),
                   OutlinedButton(
                     onPressed: () {
-                      // Implement delete account functionality
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            content: Text('Sure you want to log out?', style: TextStyle(color: Colors.black, fontSize: 16),),
+                            actions: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(); // Close the dialog
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.black, backgroundColor: Colors.grey[200],
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                    child: Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(); // Close the dialog
+                                      navigateToSplashScreen();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.white, backgroundColor: Colors.orange,
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                    child: Text('Log Out'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      );
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red, side: BorderSide(color: Colors.red), // Border color
@@ -117,7 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(20.0),
                       ),
                     ),
-                    child: Text('Delete Account', style: TextStyle(fontSize: 12)),
+                    child: Text('Sign out', style: TextStyle(fontSize: 13)),
                   ),
                 ],
               )
@@ -126,6 +173,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       )
     );
-
   }
+  void navigateToSplashScreen() {
+    logger.d('navigateToSplashScreen');
+    widget.onLogout();
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+  }
+
+
 }

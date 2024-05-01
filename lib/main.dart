@@ -49,6 +49,13 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  void onLogout() {
+    logger.d('onLogout');
+    setState(() {
+      isAuthenticated = false;
+    });
+  }
+
 // This widget is the root  of your application.
   @override
   Widget build(BuildContext context) {
@@ -56,7 +63,7 @@ class _MyAppState extends State<MyApp> {
       title: 'BLink',
       initialRoute: '/',
       routes: {
-        '/': (context) => isAuthenticated ? NavScreen(loggedInUser: loggedInUser!) : SplashScreen(),
+        '/': (context) => isAuthenticated ? NavScreen(loggedInUser: loggedInUser!, onLogout: onLogout) : SplashScreen(),
         '/login': (context) => LoginScreen(onLoginSuccess: onLoginSuccess),
         '/register': (context) => RegistrationScreen(),
         '/search': (context) => SearchScreen()
@@ -66,7 +73,7 @@ class _MyAppState extends State<MyApp> {
         primarySwatch: Colors.orange,
         visualDensity: VisualDensity.adaptivePlatformDensity,
         fontFamily: 'Montserrat',
-      ),
+      )
     );
   }
 

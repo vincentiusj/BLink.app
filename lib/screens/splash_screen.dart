@@ -18,39 +18,54 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            Text("Let's sign you in"),
-            SizedBox(height: 16.0),
-            SizedBox(
-              child: Image.asset('assets/images/bus_splash_image.png'),
-            ),
-            Text("Linking Your Way Linking Your Day"),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  navigateToLogin();
-                },
-                child: const Text('Login'),
+            Column(children: [
+              SizedBox(
+                child: Image.asset('assets/images/bus_splash_image.png'),
               ),
-            ),
-            Row(
+              Text(
+                  "Linking Your Way Linking Your Day",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400)
+              ),
+            ],),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text('Dont have an account'),
-                GestureDetector(
-                  onTap: () {
-                    navigateToRegister();
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    navigateToLogin();
                   },
-                  child: const Text(
-                    'Sign Up',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      decoration: TextDecoration.underline,
+                  child: Text('Get Started', style: TextStyle(color: Colors.white),),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                )
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text('Dont have an account?'),
+                    SizedBox(width: 5),
+                    GestureDetector(
+                      onTap: () {
+                        navigateToRegister();
+                      },
+                      child: const Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
               ],
-            ),
+            )
           ],
         ),
 

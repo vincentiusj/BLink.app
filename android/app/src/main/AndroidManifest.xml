@@ -8,7 +8,7 @@
     <application
         android:label="blink_application"
         android:name="android.app.Application"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/logo_with_wording">
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

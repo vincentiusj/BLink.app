@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:blink_application/models/bus_model.dart';
 import 'package:blink_application/repository/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -23,6 +24,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   late GoogleMapController mapController;
 
+
+  bool _searchFilledState() {
+    return origin != null && destination != null;
+  }
   @override
   void initState() {
     super.initState();
@@ -32,7 +37,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _updateOriginAndDestination() async {
     logger.d('_updateOriginAndDestination $origin | $destination');
-    if (origin != null && destination != null) {
+    if (_searchFilledState()) {
       logger.d('_updateOriginAndDestination masuk sini');
 
       // try {
@@ -178,13 +183,13 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Expanded _buildMapsView(){
-    var originLatitude = double.tryParse(origin?.latitude ?? '0.0') ?? 0.0;
-    var originLongitude = double.tryParse(origin?.longitude ?? '0.0') ?? 0.0;
-    var destinationLatitude = double.tryParse(destination?.latitude ?? '0.0') ?? 0.0;
-    var destinationLongitude = double.tryParse(destination?.longitude ?? '0.0') ?? 0.0;
+    var originLatitude = double.tryParse(origin?.location?.latitude ?? '0.0') ?? 0.0;
+    var originLongitude = double.tryParse(origin?.location?.longitude ?? '0.0') ?? 0.0;
+    var destinationLatitude = double.tryParse(destination?.location?.latitude ?? '0.0') ?? 0.0;
+    var destinationLongitude = double.tryParse(destination?.location?.longitude ?? '0.0') ?? 0.0;
 
     return Expanded(
-        child: (origin != null && destination != null)
+        child: (_searchFilledState())
             ?
         Container(
           color: Colors.grey[300],
@@ -222,7 +227,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildBusArrivalListView() {
     return FutureBuilder(
-        future: DatabaseHelper.getAllStops(),
+        future: _generateUpcomingArrivals(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -233,34 +238,69 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Text('Error: ${snapshot.error}'),
             );
           } else {
-            List<Stop>? stopList = snapshot.data;
-            return Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildOriginFieldView(stopList),
-                    _buildDestinationFieldView(stopList)
-                  ],
-                )
-            );
+            List<Bus>? upcomingBusList = snapshot.data;
+            logger.d('_buildBusArrivalListView1 $upcomingBusList');
+            if(upcomingBusList != null && upcomingBusList.isNotEmpty){
+              logger.d('_buildBusArrivalListView1 ${upcomingBusList.length}');
+              return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Expanded(
+                      child: ListView.builder(
+                        itemCount: upcomingBusList.length,
+                        itemBuilder: (context, index) {
+                          logger.d('masuk sini');
+                          logger.d('_buildBusArrivalListView2 ${upcomingBusList[index]}');
+                          Bus? upcomingBus = upcomingBusList[index];
+                          return Card(
+                            elevation: 2,
+                            margin: EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              title: Text(
+                                upcomingBus.plateNumber,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(AppStrings.estimatedTimeArrivalLabel + ' ${upcomingBus.busType}'),
+                              trailing: ElevatedButton(
+                                onPressed: () {
+                                  // Navigate to details page
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(AppStrings.detailLabel),
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                  )
+              );
+            } else {
+              return Center(child: Text("No Available Bus"));
+            }
           }
         }
     );
 
     return Expanded(
-      child: (origin != null && destination != null)
+      child: (_searchFilledState())
           ?
       ListView.builder(
         itemCount: 5,
@@ -298,8 +338,52 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
 
+  Future<List<Bus>?> _generateUpcomingArrivals() async {
+    if(_searchFilledState()){
+      try{
+        var routeList = await DatabaseHelper.searchRoutes(origin!.stopId, destination!.stopId);
+        logger.d('_generateUpcomingArrivals routeList ${routeList}');
+        var busesInRoutesFutures = routeList.map((e) => DatabaseHelper.getBusesFromRouteId(e.routeId));
+        logger.d('_generateUpcomingArrivals busesInRoutesFutures $busesInRoutesFutures');
+        var busesInRoutesList = await Future.wait(busesInRoutesFutures);
+        logger.d('_generateUpcomingArrivals busesInRoutesList $busesInRoutesList');
 
+        List<Bus>? busesInRoutesRTLocationList = [];
 
+        for(var busesInRoute in busesInRoutesList){
+          var busRTLocation = await _getBusesInRoutesRTLocation(busesInRoute);
+          logger.d('_generateUpcomingArrivals busRTLocation $busRTLocation');
+
+          busesInRoutesRTLocationList.addAll(busRTLocation ?? []);
+        }
+        logger.d( '_generateUpcomingArrivals busesInRoutesRTLocationList $busesInRoutesRTLocationList');
+        // return busesInRoutesRTLocationList;
+        logger.d( '_generateUpcomingArrivals busesInRoutesList.first ${busesInRoutesList.first}');
+
+        return busesInRoutesList.first;
+
+      } catch(e){
+        logger.d('_generateUpcomingArrivals error $e');
+      }
+    }
+  }
+
+  Future<Iterable<Bus>?> _getBusesInRoutesRTLocation(List<Bus> busList) async {
+    try {
+      logger.d('_getBusesInRoutesRTLocation masuk sini $busList');
+
+      List<Bus> busRealTimeLocationList = [];
+      for(var bus in busList){
+        var jsonResponse = await ApiService.getBusActivityInfo(bus);
+        Bus busRealTimeLocation = jsonResponse.map((json) => Bus.addLocation(bus, json)).toList();
+
+        busRealTimeLocationList.add(busRealTimeLocation);
+      }
+      return busRealTimeLocationList;
+    } catch (e) {
+      print('getBusActivityInfo failed: $e');
+    }
+  }
 
 
 

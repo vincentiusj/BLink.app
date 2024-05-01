@@ -10,8 +10,9 @@ import '../repository/api_service.dart';
 
 class NavScreen extends StatefulWidget {
   final User loggedInUser;
+  final VoidCallback onLogout;
 
-  const NavScreen({Key? key, required this.loggedInUser}) : super(key: key);
+  const NavScreen({Key? key, required this.loggedInUser, required this.onLogout}) : super(key: key);
 
   @override
   State<NavScreen> createState() => _NavScreenState();
@@ -38,7 +39,7 @@ class _NavScreenState extends State<NavScreen> {
           HomeScreen(loggedInUser: widget.loggedInUser),
           const StopsScreen(),
           const EmergencyScreen(),
-          ProfileScreen(loggedInUser: widget.loggedInUser)
+          ProfileScreen(loggedInUser: widget.loggedInUser, onLogout: widget.onLogout)
         ],
       ),
       bottomNavigationBar: BottomAppBar(

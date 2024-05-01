@@ -178,17 +178,10 @@ class DatabaseHelper {
     final db = await database;
     List<Map<String, dynamic>> maps = await db.query(stopTable);
 
-    logger.d('getAllStops $maps');
+    logger.d('getAllStops1 $maps');
     // Convert the List<Map<String, dynamic>> into a List<Stop>
     return List.generate(maps.length, (i) {
-      return Stop(
-        stopId: maps[i]['id'],
-        routeId: maps[i]['routeId'],
-        stopName: maps[i]['stopName'],
-        order: maps[i]['order'],
-        latitude: maps[i]['latitude'],
-        longitude: maps[i]['longitude'],
-      );
+      return Stop.fromMap(maps[i]);
     });
   }
 
@@ -225,6 +218,38 @@ class DatabaseHelper {
     });
   }
 
+  static Future<List<RouteModel>> searchRoutes(String startStopId, String endStopId) async {
+    final db = await database;
+
+    List<Map<String, dynamic>> maps = await db.rawQuery('''
+    SELECT * FROM $routeTable
+    WHERE id IN (
+      SELECT routeId FROM $stopTable WHERE id = ?
+    )
+    AND id IN (
+      SELECT routeId FROM $stopTable WHERE id = ?
+    )
+  ''', [startStopId, endStopId]);
+
+    List<RouteModel> routes = maps.map((result) => RouteModel.fromMap(result)).toList();
+
+    // await db.close();
+
+    return routes;
+  }
+
+  static Future<List<Bus>> getBusesFromRouteId(String routeId) async {
+    final db = await database;
+
+    List<Map<String, dynamic>> results = await db.rawQuery('''
+    SELECT * FROM $busTable WHERE routeId = ?
+    ''', [routeId]);
+
+// Process the results and convert them into Route objects
+    List<Bus> buses = results.map((result) => Bus.fromMap(result)).toList();
+
+    return buses;
+  }
 
   static Future<void> captureDatabase() async {
     // Directory documentsDirectory = await getApplicationDocumentsDirectory();

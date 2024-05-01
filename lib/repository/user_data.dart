@@ -19,11 +19,12 @@ Future<Map<String, String?>> getLoggedInUserKey() async {
 Future<bool> checkLoginStatus() async {
   logger.t('checkLoginStatus');
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  return prefs.getBool('isAuthenticated') ?? false;
+  // return prefs.getBool('isAuthenticated') ?? false;
+  return false;
 }
 
 Future<void> setLoginStatus(bool isAuthenticated) async {
-  logger.t('setLoginStatus');
+  logger.t('setLoginStatus $isAuthenticated');
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await prefs.setBool('isAuthenticated', isAuthenticated);
 }

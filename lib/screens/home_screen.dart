@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       return placeList;
     } catch (e) {
-      print('Get user info failed: $e');
+      print('_getPlaceList failed: $e');
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/GlobalConstants.dart';
+import '../models/bus_model.dart';
 
 class ApiService {
   static const String baseUrl = 'http://152.42.192.127:8086/';
@@ -127,16 +128,16 @@ class ApiService {
       'origin': {
         'location': {
           'latLng': {
-            'latitude': origin.latitude,
-            'longitude': origin.longitude
+            'latitude': origin.location?.latitude,
+            'longitude': origin.location?.longitude
           }
         }
       },
       'destination': {
         'location': {
           'latLng': {
-            'latitude': destination.latitude,
-            'longitude': destination.longitude
+            'latitude': destination.location?.latitude,
+            'longitude': destination.location?.longitude
           }
         }
       },
@@ -202,6 +203,17 @@ class ApiService {
 
   static Future<List<dynamic>> getPlaceList() async {
     final url = Uri.parse('${baseUrl}places');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+    return _processResponse(response);
+  }
+
+  static Future<dynamic> getBusActivityInfo(Bus bus) async {
+    final url = Uri.parse('${baseUrl}bus-activity-info/${bus.busId}');
     final response = await http.get(
       url,
       headers: {

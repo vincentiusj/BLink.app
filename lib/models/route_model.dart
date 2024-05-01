@@ -28,4 +28,11 @@ class RouteModel {
       'routeName': routeName
     };
   }
+
+  factory RouteModel.fromMap(Map<String, dynamic> maps){
+    return RouteModel(
+        routeId: maps['id'],
+        routeName: maps['routeName']
+    );
+  }
 }
