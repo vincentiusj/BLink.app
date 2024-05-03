@@ -1,7 +1,7 @@
 import 'package:blink_application/models/bus_model.dart';
 import 'package:blink_application/models/net_models.dart';
 import 'package:blink_application/repository/database_helper.dart';
-import '../models/GlobalConstants.dart';
+import '../util/global_contans.dart';
 import 'dart:convert';
 import '../models/route_model.dart';
 import '../models/stop_model.dart';

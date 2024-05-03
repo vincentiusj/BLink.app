@@ -1,18 +1,20 @@
 import 'package:blink_application/models/location_model.dart';
 
 class DistanceRoute {
-  final Location originLocation;
-  final Location destinationLocation;
-  late final String? distanceMeters;
-  late final String? duration;
+  // final Location originLocation;
+  // final Location destinationLocation;
+  late final int distanceMeters;
+  late final String duration;
   late final String? polyline;
 
-  DistanceRoute({required this.originLocation, required this.destinationLocation, this.distanceMeters, this.duration, this.polyline});
+  // DistanceRoute({required this.originLocation, required this.destinationLocation, this.distanceMeters, this.duration, this.polyline});
+  DistanceRoute({required this.distanceMeters, required this.duration, this.polyline});
 
   factory DistanceRoute.fromJson(Map<String, dynamic> json) {
     return DistanceRoute(
-        originLocation: Location.fromJson(json),
-        longitude: json['longitude']
+        distanceMeters: json['distanceMeters'],
+        duration: json['duration'],
+        // polyline: json['polyline'],
     );
   }
 }

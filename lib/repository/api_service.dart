@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:blink_application/models/location_model.dart';
 import 'package:blink_application/models/stop_model.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 
-import '../models/GlobalConstants.dart';
+import '../util/global_contans.dart';
 import '../models/bus_model.dart';
 
 class ApiService {
@@ -48,7 +49,7 @@ class ApiService {
       'phone_number': phoneNumber,
       'email': email,
       'password': password,
-      'role': "PASSENGER",
+      'role': "DRIVER",
     });
 
     final response = await http.put(
@@ -120,24 +121,25 @@ class ApiService {
     return _processResponse(response);
   }
 
-  static Future<void> computeRoute(Stop origin, Stop destination) async {
+  static Future<Map<String, dynamic>> computeRoute(Location currentBusLocation, Location originStop) async {
     const apiKey = 'AIzaSyC7uRjGhqPKd-LuW799pNroEqta2c0ER_s';
     final url = Uri.parse('https://routes.googleapis.com/directions/v2:computeRoutes');
 
+    logger.d('compute route');
     final requestBody = jsonEncode({
       'origin': {
         'location': {
           'latLng': {
-            'latitude': origin.location?.latitude,
-            'longitude': origin.location?.longitude
+            'latitude': currentBusLocation.latitude,
+            'longitude': currentBusLocation.longitude
           }
         }
       },
       'destination': {
         'location': {
           'latLng': {
-            'latitude': destination.location?.latitude,
-            'longitude': destination.location?.longitude
+            'latitude': originStop.latitude,
+            'longitude': originStop.longitude
           }
         }
       },
@@ -165,16 +167,23 @@ class ApiService {
     );
     // Log the request
     logger.i('HTTP GET Request: ${response.request!.url}');
+    logger.i('HTTP GET Request: ${requestBody}');
     logger.i('HTTP Response Status Code: ${response.statusCode}');
     logger.i('HTTP Response Body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
 
-    } else {
-      // Handle error
-      print('Failed to compute route: ${response.statusCode}');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to load data: ${response.statusCode} - ${response.body}');
     }
+
+    return jsonDecode(response.body);
+    // if (response.statusCode == 200) {
+    //   final data = jsonDecode(response.body);
+    //
+    // } else {
+    //   // Handle error
+    //   print('Failed to compute route: ${response.statusCode}');
+    // }
 
   }
 
@@ -202,7 +211,7 @@ class ApiService {
   }
 
   static Future<List<dynamic>> getPlaceList() async {
-    final url = Uri.parse('${baseUrl}places');
+    final url = Uri.parse('${baseUrl}recommendation/all');
     final response = await http.get(
       url,
       headers: {
@@ -223,12 +232,35 @@ class ApiService {
     return _processResponse(response);
   }
 
+  static Future<dynamic> busActivityCheck({
+    required String busId,
+    required String userId,
+    required String latitude,
+    required String longitude
+  }) async {
+    final url = Uri.parse('${baseUrl}bus-activity-check');
+    final requestBody = jsonEncode({
+      'bus_id': busId,
+      'user_id': userId,
+      'latitude': latitude,
+      'longitude': longitude
+    });
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: requestBody
+    );
+    return _processResponse(response);
+  }
+
   static String _getFutureDateTime(){
+    logger.d('_getFutureDateTime masuk');
     DateTime now = DateTime.now();
     DateTime futureTime = now.add(Duration(minutes: 2));
-    String formattedDate = DateFormat("yyyy-MM-ddTHH:mm:ss.SSSSSSSSSZ").format(futureTime);
+    String formattedDate = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS'Z'").format(futureTime);
     logger.d('_getFutureDateTime $formattedDate');
     return formattedDate;
   }
-
 }

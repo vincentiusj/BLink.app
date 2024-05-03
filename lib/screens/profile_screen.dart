@@ -1,6 +1,7 @@
+import 'package:blink_application/res/colors.dart';
 import 'package:flutter/material.dart';
 
-import '../models/GlobalConstants.dart';
+import '../util/global_contans.dart';
 import '../models/user_model.dart';
 import '../repository/user_data.dart';
 
@@ -28,7 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           alignment: Alignment.center,
           padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
-            color: Colors.orange.shade300,
+            color: AppColors.orangeSoft,
             borderRadius: BorderRadius.circular(10.0),
           ),
           child: Column(
@@ -62,30 +63,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 10.0),
-              Text(
-                user.fullName,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24.0,
-                  color: Colors.white,
+              Column(children: [
+                Text(
+                  user.fullName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24.0,
+                    color: AppColors.teaBrown,
+                  ),
                 ),
-              ),
-              SizedBox(height: 10.0),
-              Text(
-                user.email,
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.white,
+                SizedBox(height: 10,),
+                Text(
+                  user.email,
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: AppColors.teaBrown,
+                  ),
                 ),
-              ),
-              Text(
-                user.phoneNumber ?? '082200000000',
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.white,
-                ),
-              ),
+                SizedBox(height: 5,)
+              ],),
               SizedBox(height: 20.0),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -95,7 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // Navigate to edit profile screen
                     },
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white, backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white, backgroundColor: AppColors.teaBrown,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20.0),
                       ),
@@ -103,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.edit, color: Colors.orangeAccent, size: 17),
+                        Icon(Icons.edit, color: Colors.white, size: 17),
                         SizedBox(width: 5.0),
                         Text('Edit Profile', style: TextStyle(fontSize: 13))
                       ],
@@ -176,6 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
   void navigateToSplashScreen() {
     logger.d('navigateToSplashScreen');
+    setLoginStatus(false);
     widget.onLogout();
     Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }

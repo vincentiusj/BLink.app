@@ -2,10 +2,11 @@ import 'package:blink_application/repository/user_data.dart';
 import 'package:blink_application/screens/registration_screen.dart';
 import 'package:flutter/material.dart';
 
-import '../models/GlobalConstants.dart';
+import '../util/global_contans.dart';
+import '../models/user_model.dart';
 import '../repository/api_service.dart';
 
-class LoginScreen extends StatefulWidget {
+class   LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
 
   const LoginScreen({Key? key, required this.onLoginSuccess}) : super(key: key);
@@ -22,24 +23,29 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   Future<void> _loginUser(void Function() navigateToHome) async {
+    // setState(() {
+    //   navigateToHome();
+    //   widget.onLoginSuccess();
+    // });
     try {
       var jsonResponse = await ApiService.loginUser(
         emailOrPhone: _emailController.text,
         password: _passwordController.text,
       );
-      // Login successful
-      // Navigate to Home Screen
-      setState(() {
-        storeLoggedInUserKey(jsonResponse['user_id'], jsonResponse['role']);
-        navigateToHome();
 
+      // store logged in user to shared pref
+      var user = User.fromJson(jsonResponse, _emailController.text);
+      logger.d('login2 ${user.toString()}');
+      storeLoggedInUser(user);
+
+      setState(() {
         widget.onLoginSuccess();
+        navigateToHome();
       });
-      // widget.onLoginSuccess();
-      // navigateToHome();
-      print('Login successful');
+      logger.d('Login successful');
     } catch (e) {
       logger.d('login failed ${e.toString()}');
+
       showLoginErrorMessage();
     }
   }
@@ -268,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
     // Clear text fields
-    _emailController.clear();
+    // _emailController.clear();
     _passwordController.clear();
   }
 }

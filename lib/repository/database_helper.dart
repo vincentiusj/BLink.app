@@ -4,7 +4,7 @@ import 'package:blink_application/models/bus_model.dart';
 import 'package:blink_application/models/route_model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../models/GlobalConstants.dart';
+import '../util/global_contans.dart';
 import '../models/stop_model.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -183,6 +183,18 @@ class DatabaseHelper {
     return List.generate(maps.length, (i) {
       return Stop.fromMap(maps[i]);
     });
+  }
+
+  static Future<Stop?> getStopById(String stopId) async {
+    final db = await database;
+    List<Map<String, dynamic>> maps = await db.query(stopTable,
+        where: 'id = ?',
+        whereArgs: [stopId.toString()]); // Assuming stopId is stored as string in the database
+
+    if (maps.isNotEmpty) {
+      return Stop.fromMap(maps.first); // Assuming Stop has a factory constructor fromMap
+    }
+    return null;
   }
 
   static Future<List<Bus>> getAllBus() async {

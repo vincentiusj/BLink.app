@@ -1,7 +1,7 @@
 import 'package:blink_application/models/bus_model.dart';
 import 'package:blink_application/models/stop_model.dart';
 
-import 'GlobalConstants.dart';
+import '../util/global_contans.dart';
 
 class RouteBusResponse{
   final String routeId;

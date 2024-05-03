@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../models/GlobalConstants.dart';
+import '../util/global_contans.dart';
 import '../repository/api_service.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -19,7 +19,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  Future<void> _registerUser(void Function() navigateToHome) async {
+  Future<void> _registerUser(void Function() navigateToLogin) async {
     try {
       await ApiService.registerUser(
         fullName: _fullNameController.text,
@@ -29,7 +29,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       );
       // Registration successful
       logger.d('Registration successful');
-      navigateToHome();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Registration successful! Login now to get in.'),
+        ),
+      );
+      navigateToLogin();
     } catch (e) {
       // Registration failed
       logger.d('Registration failed: $e');
@@ -175,8 +180,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
+                        logger.d('try to register');
                         _registerUser(() {
-                          navigateToHome();
+                          navigateToLogin();
                         });
                       }
                     },
@@ -195,8 +201,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       Text('Already have an account?'),
                       TextButton(
                         onPressed: () {
-                          // Navigate to login screen
-                          Navigator.pop(context);
+                          navigateToLogin();
                         },
                         child: Text(
                           'Login',
@@ -217,47 +222,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
-
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Scaffold(
-  //     appBar: AppBar(
-  //       flexibleSpace: Center(
-  //         child: Image.asset('assets/images/logo_blink_app.png'),
-  //       ),
-  //     ),
-  //     body: Padding(
-  //       padding: const EdgeInsets.all(16.0),
-  //       child: Form(
-  //         key: _formKey,
-  //         child: Column(
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: <Widget>[
-  //             Text("Create a new account"),
-  //             SizedBox(height: 16.0),
-  //             _buildTextInput("Full Name", _fullNameController),
-  //             _buildTextInput("Email", _emailController),
-  //             _buildTextInput("Phone Number", _phoneNumberController),
-  //             _buildTextInput("Password", _passwordController),
-  //             Center(
-  //               child: ElevatedButton(
-  //                 onPressed: () {
-  //                   if (_formKey.currentState!.validate()) {
-  //                     _registerUser(() {
-  //                       navigateToHome();
-  //                     });
-  //                   }
-  //                 },
-  //                 child: const Text('Register'),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Widget _buildTextInput(String field, TextEditingController controller) {
     return Column(
@@ -306,8 +270,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
-  void navigateToHome(){
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+  void navigateToLogin(){
+    // Navigate to login screen
+    Navigator.pop(context);
   }
 
   void showRegisterErrorMessage() {

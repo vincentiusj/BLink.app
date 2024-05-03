@@ -2,17 +2,23 @@ import 'dart:convert';
 
 import 'package:blink_application/models/bus_model.dart';
 import 'package:blink_application/repository/api_service.dart';
+import 'package:blink_application/res/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../models/GlobalConstants.dart';
+import '../util/global_contans.dart';
+import '../models/distance_route.dart';
+import '../models/location_model.dart';
 import '../models/stop_model.dart';
 import '../repository/database_helper.dart';
 import '../res/strings.dart';
 
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final Stop? origin;
+  final Stop? destination;
+
+  const SearchScreen({Key? key, this.origin, this.destination}): super(key: key);
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -24,13 +30,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
   late GoogleMapController mapController;
 
-
   bool _searchFilledState() {
     return origin != null && destination != null;
   }
   @override
   void initState() {
     super.initState();
+    origin = widget.origin;
+    destination = widget.destination;
     logger.d('initState $origin | $destination');
     _updateOriginAndDestination();
   }
@@ -54,12 +61,14 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-        child: Column(
+        child: Stack(
             children: [
-              const SizedBox(height: 16),
-              _buildStartEndSearchField(),
-              SizedBox(height: 10.0),
-              _buildMapsView(),
+              Column(children: [
+                const SizedBox(height: 16),
+                _buildStartEndSearchField(),
+                SizedBox(height: 10.0),
+                _buildMapsView(),
+              ],),
               _buildBusArrivalListView()
             ]
         ),
@@ -182,16 +191,18 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Expanded _buildMapsView(){
+  Widget _buildMapsView(){
     var originLatitude = double.tryParse(origin?.location?.latitude ?? '0.0') ?? 0.0;
     var originLongitude = double.tryParse(origin?.location?.longitude ?? '0.0') ?? 0.0;
     var destinationLatitude = double.tryParse(destination?.location?.latitude ?? '0.0') ?? 0.0;
     var destinationLongitude = double.tryParse(destination?.location?.longitude ?? '0.0') ?? 0.0;
 
-    return Expanded(
+    return Container(
         child: (_searchFilledState())
             ?
         Container(
+          height: MediaQuery.of(context).size.height - 300, // Adjust height as needed
+          width: MediaQuery.of(context).size.width,
           color: Colors.grey[300],
           child: GoogleMap(
             initialCameraPosition: CameraPosition(
@@ -242,21 +253,16 @@ class _SearchScreenState extends State<SearchScreen> {
             logger.d('_buildBusArrivalListView1 $upcomingBusList');
             if(upcomingBusList != null && upcomingBusList.isNotEmpty){
               logger.d('_buildBusArrivalListView1 ${upcomingBusList.length}');
-              return Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: Offset(0, 3),
+              return Positioned(
+                  bottom: 0,
+                  top: MediaQuery.of(context).size.height - 180,
+                  left: 15,
+                  right: 15,
+                  child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10.0)
                       ),
-                    ],
-                  ),
-                  child: Expanded(
                       child: ListView.builder(
                         itemCount: upcomingBusList.length,
                         itemBuilder: (context, index) {
@@ -273,18 +279,71 @@ class _SearchScreenState extends State<SearchScreen> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              subtitle: Text(AppStrings.estimatedTimeArrivalLabel + ' ${upcomingBus.busType}'),
+                              subtitle: Text('Arrived in ${upcomingBus.latestETA}'),
                               trailing: ElevatedButton(
                                 onPressed: () {
-                                  // Navigate to details page
+                                  showBottomSheet(context: context, builder: (BuildContext){
+                                    return ClipRRect(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+                                        child: Container(
+                                        height: 250,
+                                        color: AppColors.orangeSoft,
+                                        child: Stack(
+                                          children: [
+                                            Positioned(
+                                              top: 0,
+                                              right: 0,
+                                              child: IconButton(
+                                                icon: Icon(Icons.close_fullscreen, color: Colors.orange,),
+                                                onPressed: () {
+                                                  Navigator.pop(context); // Close the bottom sheet
+                                                },
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: EdgeInsets.all(16.0),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  SizedBox(height: 16.0),
+                                                  Card(
+                                                    elevation: 2,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(16.0),
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            'Bus Plate Number: ${upcomingBus.plateNumber}',
+                                                            style: TextStyle(
+                                                              fontSize: 16.0,
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          SizedBox(height: 8.0),
+                                                          Text('${upcomingBus.busColor}'),
+                                                          Text('${upcomingBus.busType}'),
+                                                          Text('Passenger Count: ${upcomingBus.passengerCount}'),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    );
+                                  });
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.orange,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                                  // shape: RoundedRectangleBorder(
+                                  //   borderRadius: BorderRadius.circular(8),
+                                  // ),
                                 ),
-                                child: const Text(AppStrings.detailLabel),
+                                child: const Icon(Icons.info_outline, color: Colors.white,),
                               ),
                             ),
                           );
@@ -293,7 +352,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   )
               );
             } else {
-              return Center(child: Text("No Available Bus"));
+              return Positioned(
+                  bottom: 0,
+                  child: Text("No Available Bus"));
             }
           }
         }
@@ -360,7 +421,8 @@ class _SearchScreenState extends State<SearchScreen> {
         // return busesInRoutesRTLocationList;
         logger.d( '_generateUpcomingArrivals busesInRoutesList.first ${busesInRoutesList.first}');
 
-        return busesInRoutesList.first;
+        return busesInRoutesRTLocationList;
+        // return busesInRoutesList.first;
 
       } catch(e){
         logger.d('_generateUpcomingArrivals error $e');
@@ -374,14 +436,49 @@ class _SearchScreenState extends State<SearchScreen> {
 
       List<Bus> busRealTimeLocationList = [];
       for(var bus in busList){
+        // get bus activity info (current location)
         var jsonResponse = await ApiService.getBusActivityInfo(bus);
-        Bus busRealTimeLocation = jsonResponse.map((json) => Bus.addLocation(bus, json)).toList();
 
-        busRealTimeLocationList.add(busRealTimeLocation);
+
+        bus.setLocation(Location.fromJson(jsonResponse));
+        bus.driverName = jsonResponse['driver_name'];
+        bus.passengerCount = jsonResponse['passenger_count'];
+        // bus.currentLocation = Location.fromJson(jsonResponse);
+
+        logger.d('bus test location ${bus.currentLocation?.longitude}');
+        // hit the gmaps api per bus, using current location, get the duration between bus current location and the origin stop
+        // if(bus.currentLocation != null){
+        var distanceRoute = await _getDistanceRoute(bus.currentLocation!);
+        bus.latestETA = distanceRoute?.first.duration;
+        // }else{
+        //   throw Exception('No Activity');
+        // }
+
+        busRealTimeLocationList.add(bus);
       }
       return busRealTimeLocationList;
     } catch (e) {
       print('getBusActivityInfo failed: $e');
+    }
+  }
+
+  Future<List<DistanceRoute>?> _getDistanceRoute(Location busCurrentLocation) async {
+    try {
+      logger.d('_getDistanceRoute masuk sini $busCurrentLocation');
+
+      // var jsonResponse = await ApiService.computeRoute(busCurrentLocation, origin!.location!);
+      var jsonResponse = await ApiService.computeRoute(destination!.location!, origin!.location!);
+      logger.d('_getDistanceRoute ${jsonResponse['routes']}');
+      var distanceRouteList = jsonResponse['routes'] as List;
+      List<DistanceRoute> distanceRoute = distanceRouteList.map((data) => DistanceRoute.fromJson(data)).toList();
+
+      logger.d('_getDistanceRoute $distanceRoute');
+
+      return distanceRoute;
+
+      // return busRealTimeLocationList;
+    } catch (e) {
+      logger.d('_getDistanceRoute failed: $e');
     }
   }
 

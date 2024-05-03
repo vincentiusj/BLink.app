@@ -1,21 +1,24 @@
 import 'dart:core';
 
+import 'package:blink_application/models/stop_model.dart';
+
 class Place {
   final String placeId;
   final String placeImage;
   final String stopId;
-  final String placeName;
-  final String placeDesc;
+  final String placeTitle;
+  final String placeLocationLink;
 
-  Place({required this.placeId, required this.placeImage, required this.stopId, required this.placeName, required this.placeDesc});
+  Place({required this.placeId, required this.placeImage, required this.stopId, required this.placeTitle, required this.placeLocationLink});
 
   factory Place.fromJson(Map<String, dynamic> json) {
+
     return Place(
         placeId: json['place_id'],
         placeImage: json['place_image'],
         stopId: json['stop_id'],
-        placeName: json['place_name'],
-        placeDesc: json['place_desc']
+        placeTitle: json['place_title'],
+        placeLocationLink: json['place_location']
     );
   }
 }

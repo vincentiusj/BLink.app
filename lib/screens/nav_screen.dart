@@ -4,7 +4,7 @@ import 'package:blink_application/screens/screens.dart';
 import 'package:blink_application/screens/stops_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
+import 'package:nfc_manager/nfc_manager.dart';
 import '../models/user_model.dart';
 import '../repository/api_service.dart';
 
@@ -44,7 +44,7 @@ class _NavScreenState extends State<NavScreen> {
       ),
       bottomNavigationBar: BottomAppBar(
         shape: CircularNotchedRectangle(),
-        color: Colors.amber,
+        color: AppColors.orangeSoft,
         notchMargin: 8.0,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -98,38 +98,83 @@ class _NavScreenState extends State<NavScreen> {
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: Text('Confirmation'),
-                content: _tappedIn ? Text('Successful Tap In!\n Tap out now?') : Text('TAP IN'),
+                actionsAlignment: MainAxisAlignment.center,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                title: Column(children: [Text('Confirmation')],),
+                content: Center(heightFactor: 0.5, child: _tappedIn ? Text('TAP OUT NOW?') : Text('TAP IN')),
                 actions: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.cancel),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                  ElevatedButton(
-                    child: Text('Confirm'),
-                    onPressed: () {
-                      // Add your confirmation logic here
-                      // _tapIn();
-                      setState(() {
-                        _tappedIn = !_tappedIn;
-                      });
-                      Navigator.of(context).pop();
-                    },
-                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.black, backgroundColor: Colors.grey[200],
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Add your confirmation logic here
+                          // _tapIn();
+                          _startNFCReading();
+                          setState(() {
+                            _tappedIn = !_tappedIn;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white, backgroundColor: Colors.orange,
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: Text('Yes'),
+                      ),
+                    ],
+                  )
                 ],
               );
             },
           );
         },
-        backgroundColor: _tappedIn? Colors.cyan : Colors.orangeAccent,
+        backgroundColor: _tappedIn? AppColors.teaBrown : AppColors.orangeSoft,
         child: const Icon(Icons.bus_alert),
-        splashColor:  !_tappedIn? Colors.cyan : Colors.orangeAccent,
+        splashColor:  !_tappedIn? AppColors.teaBrown : AppColors.orangeSoft,
         shape: CircleBorder()
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
+  }
+
+  void _startNFCReading() async {
+    try {
+      bool isAvailable = await NfcManager.instance.isAvailable();
+
+      //We first check if NFC is available on the device.
+      if (isAvailable) {
+        //If NFC is available, start an NFC session and listen for NFC tags to be discovered.
+        NfcManager.instance.startSession(
+          onDiscovered: (NfcTag tag) async {
+            // Process NFC tag, When an NFC tag is discovered, print its data to the console.
+            debugPrint('NFC Tag Detected: ${tag.data}');
+          },
+        );
+      } else {
+        debugPrint('NFC not available.');
+      }
+    } catch (e) {
+      debugPrint('Error reading NFC: $e');
+    }
   }
 
 
