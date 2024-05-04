@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import '../models/user_model.dart';
 
 
@@ -36,6 +37,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
               leading: Icon(Icons.local_hospital, color: Colors.red, size: 36),
               onTap: () {
                 // Action for calling emergency services
+                _makeEmergencyCall('911');
               },
             ),
           ),
@@ -51,7 +53,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
               subtitle: Text('Call in case of fire emergency', style: TextStyle(fontSize: 14)),
               leading: Icon(Icons.fire_extinguisher, color: Colors.red, size: 36),
               onTap: () {
-                // Action for calling fire department
+                _makeEmergencyCall('112');
               },
             ),
           ),
@@ -79,5 +81,10 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
         ],
       ),
     );
+  }
+
+  void _makeEmergencyCall(String phoneNumber) async {
+    bool? res = await FlutterPhoneDirectCaller.callNumber(phoneNumber);
+    print("Call status: $res");
   }
 }

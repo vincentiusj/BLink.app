@@ -3,10 +3,11 @@ import 'package:blink_application/res/colors.dart';
 import 'package:blink_application/screens/screens.dart';
 import 'package:blink_application/screens/stops_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:nfc_manager/nfc_manager.dart';
+
 import '../models/user_model.dart';
 import '../repository/api_service.dart';
+import '../util/global_contans.dart';
 
 class NavScreen extends StatefulWidget {
   final User loggedInUser;
@@ -18,9 +19,21 @@ class NavScreen extends StatefulWidget {
   State<NavScreen> createState() => _NavScreenState();
 }
 
-class _NavScreenState extends State<NavScreen> {
+class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   bool _tappedIn = false;
+  String? _transactionId;
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    )..repeat(reverse: true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,58 +107,8 @@ class _NavScreenState extends State<NavScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                actionsAlignment: MainAxisAlignment.center,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
-                title: Column(children: [Text('Confirmation')],),
-                content: Center(heightFactor: 0.5, child: _tappedIn ? Text('TAP OUT NOW?') : Text('TAP IN')),
-                actions: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(); // Close the dialog
-                        },
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.black, backgroundColor: Colors.grey[200],
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Add your confirmation logic here
-                          // _tapIn();
-                          _startNFCReading();
-                          setState(() {
-                            _tappedIn = !_tappedIn;
-                          });
-                          Navigator.of(context).pop();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white, backgroundColor: Colors.orange,
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: Text('Yes'),
-                      ),
-                    ],
-                  )
-                ],
-              );
-            },
-          );
+          _startNFCReading();
+          _showNFCDialog();
         },
         backgroundColor: _tappedIn? AppColors.teaBrown : AppColors.orangeSoft,
         child: const Icon(Icons.bus_alert),
@@ -156,7 +119,65 @@ class _NavScreenState extends State<NavScreen> {
     );
   }
 
-  void _startNFCReading() async {
+  void _showNFCDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Center(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              width: MediaQuery.of(context).size.width * 0.6,
+              height: 250.0,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ButtonBar(
+                    children: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Icon(
+                          Icons.close_fullscreen,
+                          color: AppColors.orangeSoft,
+                        ),
+                      ),
+                    ],
+                  ),
+                  AnimatedBuilder(
+                    animation: _animationController,
+                    builder: (context, child) {
+                      return Transform.rotate(
+                        angle: _animationController.value * 2.0 * -0.5,
+                        child: Icon(
+                          Icons.speaker_phone,
+                          size: 64.0,
+                          color: AppColors.orangeSoft,
+                        ),
+                      );
+                    },
+                  ),
+                  SizedBox(height: 16.0),
+                  Text(
+                    !_tappedIn ? 'Tap in to bus..' : 'Tap out from bus',
+                    style: TextStyle(fontSize: 20.0),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String?> _startNFCReading() async {
+    String? busId;
     try {
       bool isAvailable = await NfcManager.instance.isAvailable();
 
@@ -165,30 +186,62 @@ class _NavScreenState extends State<NavScreen> {
         //If NFC is available, start an NFC session and listen for NFC tags to be discovered.
         NfcManager.instance.startSession(
           onDiscovered: (NfcTag tag) async {
-            // Process NFC tag, When an NFC tag is discovered, print its data to the console.
-            debugPrint('NFC Tag Detected: ${tag.data}');
+
+            // Process NFC tag, When an NFC tag is discovered, print its data to the console
+            Ndef? ndef = Ndef.from(tag);
+            var message = ndef?.cachedMessage;
+            for(var record in message!.records){
+              var stringPayload = String.fromCharCodes(record.payload).substring(3);
+              logger.d('NFC detected $stringPayload');
+              busId = stringPayload;
+            }
+            await NfcManager.instance.stopSession();
+            !_tappedIn ? _tapIn(busId) : _tapOut(busId, _transactionId!);
+            Navigator.pop(context);
+            setState(() {
+              _tappedIn = !_tappedIn;
+            });;
           },
         );
+        return busId;
       } else {
-        debugPrint('NFC not available.');
+        logger.d('NFC not available.');
       }
     } catch (e) {
-      debugPrint('Error reading NFC: $e');
+      logger.d('Error reading NFC: $e');
     }
   }
 
-
-  Future<Tap?> _tapIn() async {
-    print('login ${widget.loggedInUser}');
+  Future<Tap?> _tapIn(String? busId) async {
+    print('_tapIn ${widget.loggedInUser}');
     try {
       var jsonResponse = await ApiService.tapIn(
         userId: widget.loggedInUser.userId,
-        busId: '',
+        busId: busId ?? '',
         role: widget.loggedInUser.role ?? 'PASSENGER',
       );
+      logger.d('_tapIn successful: $jsonResponse');
+      var tapData = Tap.fromJson(jsonResponse);
+      _transactionId = tapData.transactionId;
+      return tapData;
+    } catch (e) {
+      print('_tapIn failed: $e');
+    }
+  }
+
+  Future<Tap?> _tapOut(String? busId, String transactionId) async {
+    print('_tapOut ${widget.loggedInUser}');
+    try {
+      var jsonResponse = await ApiService.tapOut(
+        userId: widget.loggedInUser.userId,
+        busId: busId ?? '',
+        role: widget.loggedInUser.role ?? 'PASSENGER',
+        transactionId: transactionId,
+      );
+      logger.d('_tapOut successful: $jsonResponse');
       return Tap.fromJson(jsonResponse);
     } catch (e) {
-      print('Get user info failed: $e');
+      print('_tapOut failed: $e');
     }
   }
 

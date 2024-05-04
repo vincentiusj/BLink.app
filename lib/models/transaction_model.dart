@@ -11,7 +11,7 @@ class Tap{
     return Tap(
         userId: json['user_id'],
         role: json['role'],
-        busId: json['busId'],
+        busId: json['bus_id'],
         status: json['status'],
         transactionId: json['transaction_id']);
   }

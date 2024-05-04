@@ -177,13 +177,6 @@ class ApiService {
     }
 
     return jsonDecode(response.body);
-    // if (response.statusCode == 200) {
-    //   final data = jsonDecode(response.body);
-    //
-    // } else {
-    //   // Handle error
-    //   print('Failed to compute route: ${response.statusCode}');
-    // }
 
   }
 
@@ -198,7 +191,6 @@ class ApiService {
       'user_id': userId,
       'role': role,
     });
-
     final response = await http.post(
       url,
       body: requestBody,
@@ -206,7 +198,29 @@ class ApiService {
         'Content-Type': 'application/json',
       },
     );
+    return _processResponse(response, requestBody);
+  }
 
+  static Future<Map<String, dynamic>> tapOut({
+    required String busId,
+    required String userId,
+    required String role,
+    required String transactionId
+  }) async {
+    final url = Uri.parse(baseUrl + 'tap-out');
+    final requestBody = jsonEncode({
+      'bus_id': busId,
+      'user_id': userId,
+      'role': role,
+      'transaction_id': transactionId
+    });
+    final response = await http.post(
+      url,
+      body: requestBody,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
     return _processResponse(response, requestBody);
   }
 

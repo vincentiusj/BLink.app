@@ -1,18 +1,13 @@
-import 'dart:convert';
-import 'dart:ui';
-
 import 'package:blink_application/models/location_model.dart';
-import 'package:blink_application/screens/search_screen.dart';
-import 'package:blink_application/util/global_contans.dart';
 import 'package:blink_application/models/user_model.dart';
 import 'package:blink_application/res/colors.dart';
-import 'package:blink_application/res/strings.dart';
+import 'package:blink_application/screens/search_screen.dart';
+import 'package:blink_application/util/global_contans.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:url_launcher/url_launcher_string.dart';
-import '../models/place_model.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../models/place_model.dart';
 import '../models/stop_model.dart';
 import '../repository/api_service.dart';
 import '../repository/database_helper.dart';
@@ -130,6 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 var nearestStopFromPlace = await DatabaseHelper.getStopById(place.stopId);
 
                 logger.d('_generatePlaceCards $currentLocation | $nearestStopFromPlace | $nearestStopFromHere');
+
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {
