@@ -5,7 +5,7 @@ class Stop {
   final String routeId;
   final String stopName;
   final String? routeName;
-  final String order;
+  final int order;
   final Location? location;
 
   Stop({required this.stopId, required this.routeId, required this.stopName, this.routeName, required this.order, this.location});
@@ -16,7 +16,7 @@ class Stop {
       routeId: routeId,
       stopName: json['stop_name'],
       routeName: json['route_name'],
-      order: json['order'],
+      order: int.parse(json['order']),
       location: Location.fromJson(json)
     );
   }

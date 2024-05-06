@@ -36,6 +36,12 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
   }
 
   @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // return const Placeholder();
 
@@ -122,10 +128,11 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
   void _showNFCDialog() {
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (BuildContext context) {
-        return Dialog(
+        return AlertDialog(
           backgroundColor: Colors.transparent,
-          child: Center(
+          content: Center(
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -136,19 +143,7 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ButtonBar(
-                    children: <Widget>[
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Icon(
-                          Icons.close_fullscreen,
-                          color: AppColors.orangeSoft,
-                        ),
-                      ),
-                    ],
-                  ),
+                  SizedBox(height: 10,),
                   AnimatedBuilder(
                     animation: _animationController,
                     builder: (context, child) {
@@ -212,6 +207,37 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
     }
   }
 
+  void showTapSuccessDialog(String tapType){
+    showDialog(
+        context: context,
+        builder: (BuildContext context){
+          Future.delayed(Duration(seconds: 2), () {
+            Navigator.of(context).pop();
+          });
+          return AlertDialog(
+            title: Icon(Icons.check_circle, color: Colors.green, size: 48),
+            actions: <Widget>[
+              ButtonBar(
+                alignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Icon(
+                      Icons.close_fullscreen,
+                      color: AppColors.orangeSoft,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            content: Text('Successful $tapType', style: TextStyle(fontSize: 18)),
+          );
+        }
+    );
+  }
+
   Future<Tap?> _tapIn(String? busId) async {
     print('_tapIn ${widget.loggedInUser}');
     try {
@@ -221,6 +247,7 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
         role: widget.loggedInUser.role ?? 'PASSENGER',
       );
       logger.d('_tapIn successful: $jsonResponse');
+      showTapSuccessDialog('Tap In');
       var tapData = Tap.fromJson(jsonResponse);
       _transactionId = tapData.transactionId;
       return tapData;
@@ -238,6 +265,8 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
         role: widget.loggedInUser.role ?? 'PASSENGER',
         transactionId: transactionId,
       );
+      showTapSuccessDialog('Tap Out');
+
       logger.d('_tapOut successful: $jsonResponse');
       return Tap.fromJson(jsonResponse);
     } catch (e) {

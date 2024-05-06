@@ -1,17 +1,21 @@
-import 'dart:convert';
+import 'dart:ui';
 
 import 'package:blink_application/models/bus_model.dart';
+import 'package:blink_application/models/route_model.dart';
 import 'package:blink_application/repository/api_service.dart';
 import 'package:blink_application/res/colors.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
-import '../util/global_contans.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import '../models/distance_route.dart';
 import '../models/location_model.dart';
 import '../models/stop_model.dart';
 import '../repository/database_helper.dart';
+import '../repository/user_data.dart';
 import '../res/strings.dart';
+import '../util/global_contans.dart';
 
 
 class SearchScreen extends StatefulWidget {
@@ -27,8 +31,14 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   Stop? origin;
   Stop? destination;
+  List<Stop> stopList = [];
+  Bus? upcomingBus;
+  bool isFavoritePlace = false;
+  Set<Polyline> _polylines = {};
 
   late GoogleMapController mapController;
+  final TextEditingController _favoriteLabelController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   bool _searchFilledState() {
     return origin != null && destination != null;
@@ -39,37 +49,41 @@ class _SearchScreenState extends State<SearchScreen> {
     origin = widget.origin;
     destination = widget.destination;
     logger.d('initState $origin | $destination');
-    _updateOriginAndDestination();
-  }
-
-  Future<void> _updateOriginAndDestination() async {
-    logger.d('_updateOriginAndDestination $origin | $destination');
-    if (_searchFilledState()) {
-      logger.d('_updateOriginAndDestination masuk sini');
-
-      // try {
-      //   var jsonResponse = await ApiService.computeRoute(origin!, destination!);
-      //
-      // } catch (e) {
-      //   logger.d('computeRoute failed $e');
-      // }
-    }
+    // _updateOriginAndDestination();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+          flexibleSpace: Center(
+            child: Image.asset('assets/images/logo_blink_app.png'),
+          ),
+        ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
         child: Stack(
             children: [
               Column(children: [
-                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                  const Text(
+                    'Where to?',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if(_searchFilledState() && !isFavoritePlace) _buildAddToFavorite(),
+                ],),
+                SizedBox(height: 10.0),
                 _buildStartEndSearchField(),
                 SizedBox(height: 10.0),
-                _buildMapsView(),
+                if(_searchFilledState()) _buildMapsView(),
               ],),
-              _buildBusArrivalListView()
+              if(_searchFilledState()) _buildBusArrivalListView()
             ]
         ),
       )
@@ -84,56 +98,42 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildStartEndSearchField(){
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Text(
-          'Where to?',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w400,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 10.0),
-        FutureBuilder(
-            future: DatabaseHelper.getAllStops(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
-              } else if (snapshot.hasError) {
-                return Center(
-                  child: Text('Error: ${snapshot.error}'),
-                );
-              } else {
-                List<Stop>? stopList = snapshot.data;
-                return Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
+    return FutureBuilder(
+        future: DatabaseHelper.getAllStops(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text('Error: ${snapshot.error}'),
+            );
+          } else {
+            List<Stop>? stopList = snapshot.data;
+            return Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
                     ),
-                    child: Column(
-                      children: [
-                        _buildOriginFieldView(stopList),
-                        _buildDestinationFieldView(stopList)
-                      ],
-                    )
-                );
-              }
-            }
-        ),
-      ],
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildOriginFieldView(stopList),
+                    _buildDestinationFieldView(stopList),
+                  ],
+                )
+            );
+          }
+        }
     );
   }
 
@@ -159,7 +159,6 @@ class _SearchScreenState extends State<SearchScreen> {
         setState(() {
           origin = stopList?.firstWhere((element) => element.stopId == value);
         });
-        _updateOriginAndDestination();
       },
     );
   }
@@ -186,7 +185,6 @@ class _SearchScreenState extends State<SearchScreen> {
         setState(() {
           destination = stopList?.firstWhere((element) => element.stopId == value);
         });
-        _updateOriginAndDestination();
       },
     );
   }
@@ -198,41 +196,50 @@ class _SearchScreenState extends State<SearchScreen> {
     var destinationLongitude = double.tryParse(destination?.location?.longitude ?? '0.0') ?? 0.0;
 
     return Container(
-        child: (_searchFilledState())
-            ?
-        Container(
-          height: MediaQuery.of(context).size.height - 300, // Adjust height as needed
-          width: MediaQuery.of(context).size.width,
-          color: Colors.grey[300],
-          child: GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: LatLng(originLatitude, originLongitude),
-              zoom: 12.0,
-            ),
-            onMapCreated: (controller) {
-              logger.d('onMapCreated');
-              mapController = controller;
-            },
-            trafficEnabled: true,
-            mapType: MapType.satellite,
-            markers: {
-              Marker(
-                  markerId: MarkerId(origin!.stopId),
-                  position: LatLng(originLatitude, originLongitude),
-                  infoWindow: InfoWindow(title: origin?.stopName),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan)
-              ),
-              Marker(
-                markerId: MarkerId(destination!.stopId),
-                position: LatLng(destinationLatitude, destinationLongitude),
-                infoWindow: InfoWindow(title: destination?.stopName),
-              ),
-            },
-            myLocationEnabled: true,
+      height: MediaQuery.of(context).size.height - 300,
+      width: MediaQuery.of(context).size.width,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 5.0,
+            spreadRadius: 1.0,
+            offset: Offset(0.0, 2.0),
           ),
-
-        )
-            : const Center(child: CircularProgressIndicator())
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20.0),
+        child: GoogleMap(
+          initialCameraPosition: CameraPosition(
+            target: LatLng(originLatitude, originLongitude),
+            zoom: 20.0,
+          ),
+          onMapCreated: (controller) {
+            logger.d('onMapCreated $origin $destination');
+            mapController = controller;
+            setStopListForMaps();
+          },
+          polylines: _polylines,
+          trafficEnabled: true,
+          mapType: MapType.satellite,
+          markers: {
+            Marker(
+                markerId: MarkerId(origin!.stopId),
+                position: LatLng(originLatitude, originLongitude),
+                infoWindow: InfoWindow(title: origin?.stopName),
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan)
+            ),
+            Marker(
+              markerId: MarkerId(destination!.stopId),
+              position: LatLng(destinationLatitude, destinationLongitude),
+              infoWindow: InfoWindow(title: destination?.stopName),
+            ),
+          },
+          myLocationEnabled: true,
+        ),
+      )
     );
   }
 
@@ -250,9 +257,11 @@ class _SearchScreenState extends State<SearchScreen> {
             );
           } else {
             List<Bus>? upcomingBusList = snapshot.data;
-            logger.d('_buildBusArrivalListView1 $upcomingBusList');
+
             if(upcomingBusList != null && upcomingBusList.isNotEmpty){
-              logger.d('_buildBusArrivalListView1 ${upcomingBusList.length}');
+              logger.d('onMapCreated2 $origin $destination');
+
+
               return Positioned(
                   bottom: 0,
                   top: MediaQuery.of(context).size.height - 180,
@@ -269,10 +278,12 @@ class _SearchScreenState extends State<SearchScreen> {
                           logger.d('masuk sini');
                           logger.d('_buildBusArrivalListView2 ${upcomingBusList[index]}');
                           Bus? upcomingBus = upcomingBusList[index];
-                          return Card(
-                            elevation: 2,
-                            margin: EdgeInsets.symmetric(vertical: 8),
-                            child: ListTile(
+                          this.upcomingBus = upcomingBus;
+                          setStopListForMaps();
+                            return Card(
+                              elevation: 2,
+                              margin: EdgeInsets.symmetric(vertical: 8),
+                              child: ListTile(
                               title: Text(
                                 upcomingBus.plateNumber,
                                 style: TextStyle(
@@ -282,59 +293,56 @@ class _SearchScreenState extends State<SearchScreen> {
                               subtitle: Text('Arrived in ${upcomingBus.latestETA}'),
                               trailing: ElevatedButton(
                                 onPressed: () {
-                                  showBottomSheet(context: context, builder: (BuildContext){
-                                    return ClipRRect(
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-                                        child: Container(
-                                        height: 250,
-                                        color: AppColors.orangeSoft,
-                                        child: Stack(
-                                          children: [
-                                            Positioned(
-                                              top: 0,
-                                              right: 0,
-                                              child: IconButton(
-                                                icon: Icon(Icons.close_fullscreen, color: Colors.orange,),
-                                                onPressed: () {
-                                                  Navigator.pop(context); // Close the bottom sheet
-                                                },
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: EdgeInsets.all(16.0),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  SizedBox(height: 16.0),
-                                                  Card(
-                                                    elevation: 2,
-                                                    child: Padding(
-                                                      padding: EdgeInsets.all(16.0),
-                                                      child: Column(
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                        children: [
-                                                          Text(
-                                                            'Bus Plate Number: ${upcomingBus.plateNumber}',
-                                                            style: TextStyle(
-                                                              fontSize: 16.0,
-                                                              fontWeight: FontWeight.bold,
-                                                            ),
+                                  setState(() {
+                                    logger.d('onMapCreated3 $origin $destination');
+
+                                    setStopListForMaps();
+
+                                    showBottomSheet(context: context, builder: (BuildContext){
+                                      return ClipRRect(
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+                                          child: Container(
+                                            height: 250,
+                                            width: 500,
+                                            color: AppColors.orangeSoft.withOpacity(0.5),
+                                            child: Column(
+                                              children: [
+                                                Container(
+                                                  padding: EdgeInsets.all(16.0),
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      SizedBox(height: 16.0),
+                                                      Card(
+                                                        elevation: 2,
+                                                        child: Padding(
+                                                          padding: EdgeInsets.all(16.0),
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Text(
+                                                                'Bus Plate Number: ${upcomingBus.plateNumber}',
+                                                                style: TextStyle(
+                                                                  fontSize: 16.0,
+                                                                  fontWeight: FontWeight.bold,
+                                                                ),
+                                                              ),
+                                                              SizedBox(height: 8.0),
+                                                              Text('${upcomingBus.busColor}'),
+                                                              Text('${upcomingBus.busType}'),
+                                                              Text('Passenger Count: ${upcomingBus.passengerCount}'),
+                                                            ],
                                                           ),
-                                                          SizedBox(height: 8.0),
-                                                          Text('${upcomingBus.busColor}'),
-                                                          Text('${upcomingBus.busType}'),
-                                                          Text('Passenger Count: ${upcomingBus.passengerCount}'),
-                                                        ],
+                                                        ),
                                                       ),
-                                                    ),
+                                                    ],
                                                   ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    );
+                                                ),
+                                              ],
+                                            )
+                                          )
+                                      );
+                                    });
                                   });
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -360,49 +368,13 @@ class _SearchScreenState extends State<SearchScreen> {
         }
     );
 
-    return Expanded(
-      child: (_searchFilledState())
-          ?
-      ListView.builder(
-        itemCount: 5,
-        itemBuilder: (BuildContext context, int index) {
-          return Card(
-            elevation: 2,
-            margin: EdgeInsets.symmetric(vertical: 8),
-            child: ListTile(
-              title: const Text(
-                'Route Name',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              subtitle: const Text(AppStrings.estimatedTimeArrivalLabel),
-              trailing: ElevatedButton(
-                onPressed: () {
-                  // Navigate to details page
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(AppStrings.detailLabel),
-              ),
-            ),
-          );
-        },
-      )
-          : const Center(child: CircularProgressIndicator())
-    );
-
   }
-
 
   Future<List<Bus>?> _generateUpcomingArrivals() async {
     if(_searchFilledState()){
       try{
         var routeList = await DatabaseHelper.searchRoutes(origin!.stopId, destination!.stopId);
+
         logger.d('_generateUpcomingArrivals routeList ${routeList}');
         var busesInRoutesFutures = routeList.map((e) => DatabaseHelper.getBusesFromRouteId(e.routeId));
         logger.d('_generateUpcomingArrivals busesInRoutesFutures $busesInRoutesFutures');
@@ -482,6 +454,167 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Widget _buildAddToFavorite(){
+    return Align(
+        alignment: Alignment.centerRight,
+        child: TextButton(
+            child: (isFavoritePlace)
+                ? Icon(Icons.bookmark, color: AppColors.orangeSoft)
+                : Icon(
+              Icons.bookmark_add_outlined,
+              color: AppColors.orangeSoft,
+            ),
+            onPressed: () {
+              showCupertinoDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      content: SingleChildScrollView(
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              Align(
+                                  alignment: Alignment.center,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Icon(
+                                      Icons.close_fullscreen,
+                                      color: AppColors.orangeSoft,
+                                    ),
+                                  )
+                              ),
+                              TextFormField(
+                                controller: _favoriteLabelController,
+                                decoration: InputDecoration(
+                                  hintText: 'Add favorite trip...',
+                                  // prefixIcon: Icon(Icons.email, color: Colors.orange),
+                                  border: UnderlineInputBorder(
+                                      borderSide: BorderSide(
+                                          color: AppColors.orangeSoft)),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Label cannot be empty';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              SizedBox(height: 10,),
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: ElevatedButton(
+                                    onPressed: () {
+                                      if (_formKey.currentState!.validate()) {
+                                        _addToFavorites(
+                                            _favoriteLabelController.text);
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.orangeSoft),
+                                    child: Text('Add', style: TextStyle(color: Colors.white, fontSize: 12),)
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  });
+            }
+        ));
+  }
 
+  Future<void> _addToFavorites(String label) async {
+    try {
+      var user = await getLoggedInUser();
+
+      var jsonResponse = await ApiService.saveFavorite(
+        userId: user.userId,
+        originStopId: origin?.stopId ?? '',
+        destinationStopId: destination?.stopId ?? '',
+        favoriteLabel: label
+      );
+      logger.d('_addToFavorites successful: $jsonResponse');
+      handleAddFavoriteSuccess(label);
+
+    } catch (e) {
+      logger.d('_addToFavorites Failed:');
+      Navigator.of(context).pop();
+      showAddToFavoriteFailedDialog(label, e.toString());
+      setState(() {
+      });
+    }
+  }
+
+  void handleAddFavoriteSuccess(String label){
+    Navigator.of(context).pop();
+    showAddToFavoriteSuccessDialog(label);
+    setState(() {
+    });
+  }
+
+  void showAddToFavoriteSuccessDialog(String label){
+    showDialog(
+        context: context,
+        builder: (BuildContext context){
+          Future.delayed(Duration(seconds: 2), () {
+            Navigator.of(context).pop();
+          });
+          return AlertDialog(
+            title: Icon(Icons.check_circle, color: Colors.green, size: 30),
+            content: Text('$label has been added to your favorites!'),
+          );
+        }
+    );
+  }
+
+  void showAddToFavoriteFailedDialog(String label, String errorMessage){
+    showDialog(
+        context: context,
+        builder: (BuildContext context){
+          Future.delayed(Duration(seconds: 2), () {
+            Navigator.of(context).pop();
+          });
+          return AlertDialog(
+            title: Icon(Icons.error, color: Colors.redAccent, size: 30),
+            content: Text('Failed adding $label to your favorites. $errorMessage'),
+          );
+        }
+    );
+  }
+
+  Future<void> setStopListForMaps() async {
+
+    stopList.clear();
+
+    logger.d('setStopListForMaps $upcomingBus ${origin!.order} ${destination!.order}');
+
+
+    var stopListFuture = await DatabaseHelper.searchStopsInRoute(upcomingBus!.routeId, origin!.order, destination!.order);
+
+
+    logger.d('setStopListForMaps ${upcomingBus!.plateNumber} $stopListFuture');
+    stopList.addAll(stopListFuture);
+    var stopOrder = stopList.map((e) => e.order);
+    logger.d('setStopListForMaps order $stopOrder');
+
+
+    var polylineCoordinates = stopList.map((stop) =>
+        LatLng(
+            double.tryParse(stop.location?.latitude ?? '0.0')  ?? 0.0,
+            double.tryParse(stop.location?.longitude ?? '0.0')  ?? 0.0
+        )
+    ).toList();
+
+    _polylines.clear();
+    _polylines.add(Polyline(
+      polylineId: PolylineId(stopList.first.stopId),
+      points: polylineCoordinates,
+      color: AppColors.orangeSoft,
+      width: 4,
+    ));
+  }
 
 }

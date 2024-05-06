@@ -1,3 +1,4 @@
+import 'package:blink_application/res/colors.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -39,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   },
                   child: Text('Get Started', style: TextStyle(color: Colors.white),),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
+                    backgroundColor: AppColors.orangeSoft,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -57,7 +58,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       child: const Text(
                         'Sign Up',
                         style: TextStyle(
-                          color: Colors.orange,
+                          color: AppColors.orangeSoft,
                           decoration: TextDecoration.none,
                         ),
                       ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../res/colors.dart';
 import '../util/global_contans.dart';
 import '../repository/api_service.dart';
 
@@ -78,13 +79,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       prefixIcon: Icon(Icons.person, color: Colors.orange[200]),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Colors.orange)
+                        borderSide: const BorderSide(color: AppColors.orangeSoft)
                       ),
                       filled: true,
                       fillColor: Colors.orange[50],
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.orange), // Change border color here
+                        borderSide: BorderSide(color: AppColors.orangeSoft), // Change border color here
                       ),
                     ),
 
@@ -107,7 +108,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.orange), // Change border color here
+                        borderSide: BorderSide(color: AppColors.orangeSoft), // Change border color here
                       ),
                       filled: true,
                       fillColor: Colors.orange[50]
@@ -134,7 +135,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.orange), // Change border color here
+                        borderSide: BorderSide(color: AppColors.orangeSoft), // Change border color here
                       ),
                       filled: true,
                       fillColor: Colors.orange[50]
@@ -161,7 +162,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.orange), // Change border color here
+                        borderSide: BorderSide(color: AppColors.orangeSoft), // Change border color here
                       ),
                       filled: true,
                       fillColor: Colors.orange[50]
@@ -188,7 +189,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     },
                     child: Text('Register', style: TextStyle(color: Colors.black87),),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
+                      backgroundColor: AppColors.orangeSoft,
                       padding: EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -206,7 +207,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         child: Text(
                           'Login',
                           style: TextStyle(
-                            color: Colors.orange,
+                            color: AppColors.orangeSoft,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

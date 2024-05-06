@@ -22,7 +22,6 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
         children: [
           Text(
             'Emergency Contacts',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.orange),
           ),
           SizedBox(height: 16),
           Card(
@@ -32,12 +31,12 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
             elevation: 4,
             child: ListTile(
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              title: Text('Emergency Services - 911', style: TextStyle(fontSize: 18)),
-              subtitle: Text('Call for emergency assistance', style: TextStyle(fontSize: 14)),
+              title: Text('Emergency Services - 119', style: TextStyle(fontSize: 18)),
+              subtitle: Text('Call for ambulance and health emergency assistance', style: TextStyle(fontSize: 12)),
               leading: Icon(Icons.local_hospital, color: Colors.red, size: 36),
               onTap: () {
                 // Action for calling emergency services
-                _makeEmergencyCall('911');
+                _makeEmergencyCall('119');
               },
             ),
           ),
@@ -49,35 +48,33 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
             elevation: 4,
             child: ListTile(
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              title: Text('Fire Department - 112', style: TextStyle(fontSize: 18)),
-              subtitle: Text('Call in case of fire emergency', style: TextStyle(fontSize: 14)),
+              title: Text('Police Station - 110', style: TextStyle(fontSize: 18)),
+              subtitle: Text('Call for emergency assistance', style: TextStyle(fontSize: 12)),
+              leading: Icon(Icons.local_hospital, color: Colors.red, size: 36),
+              onTap: () {
+                // Action for calling emergency services
+                _makeEmergencyCall('110');
+              },
+            ),
+          ),
+          SizedBox(height: 16),
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            elevation: 4,
+            child: ListTile(
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              title: Text('Fire Department - 113', style: TextStyle(fontSize: 18)),
+              subtitle: Text('Call in case of fire emergency', style: TextStyle(fontSize: 12)),
               leading: Icon(Icons.fire_extinguisher, color: Colors.red, size: 36),
               onTap: () {
-                _makeEmergencyCall('112');
+                _makeEmergencyCall('113');
               },
             ),
           ),
           SizedBox(height: 32),
-          Text(
-            'Feedback',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.orange),
-          ),
-          SizedBox(height: 16),
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            elevation: 4,
-            child: ListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              title: Text('Submit Feedback', style: TextStyle(fontSize: 18)),
-              subtitle: Text('Share your thoughts with us', style: TextStyle(fontSize: 14)),
-              leading: Icon(Icons.feedback, color: Colors.orange, size: 36),
-              onTap: () {
-                // Action for submitting feedback
-              },
-            ),
-          ),
+
         ],
       ),
     );

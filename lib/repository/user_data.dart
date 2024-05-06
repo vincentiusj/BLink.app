@@ -10,6 +10,17 @@ Future<void> storeLoggedInUser(User user) async {
   await prefs.setString('fullName', user.fullName);
   await prefs.setString('email', user.email);
   await prefs.setString('role', user.role);
+  await prefs.setString('profileImage', user.profileImage?? '');
+}
+
+Future<void> clearLoggedIUser() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  await prefs.remove('userId');
+  await prefs.remove('fullName');
+  await prefs.remove('email');
+  await prefs.remove('role');
+  await prefs.remove('profileImage');
 }
 
 Future<User> getLoggedInUser() async {
@@ -18,7 +29,8 @@ Future<User> getLoggedInUser() async {
   final fullName = prefs.getString('fullName');
   final email = prefs.getString('email');
   final role = prefs.getString('role');
-  return User(userId: userId!, fullName: fullName!, email: email!, role: role!);
+  final profileImage = prefs.getString('profileImage') ?? '';
+  return User(userId: userId!, fullName: fullName!, email: email!, role: role!, profileImage: profileImage);
     // {'userId': userId, 'fullName''role': role,};
 }
 

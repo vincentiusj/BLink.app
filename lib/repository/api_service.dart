@@ -15,16 +15,14 @@ class ApiService {
     final responseBody = response.body;
 
     // Log the request
-    logger.i('HTTP GET Request: ${response.request!.url}');
-    logger.i('HTTP GET Request: $requestBody');
+    logger.i('HTTP ${response.request}');
+    logger.i('HTTP Request: $requestBody');
 
     // Log the response status code and body
     logger.i('HTTP Response Status Code: $statusCode');
     logger.i('HTTP Response Body: $responseBody');
 
-    if (statusCode < 200 || statusCode >= 300) {
-      throw Exception('Failed to load data: $statusCode - $responseBody');
-    }
+
 
     final jsonBody = jsonDecode(responseBody);
 
@@ -35,6 +33,7 @@ class ApiService {
     } else {
       throw Exception('Invalid JSON response: $jsonBody');
     }
+
   }
 
   static Future<Map<String, dynamic>> registerUser({
@@ -267,6 +266,103 @@ class ApiService {
       body: requestBody
     );
     return _processResponse(response);
+  }
+
+  static Future<dynamic> saveFavorite({
+    required String userId,
+    required String originStopId,
+    required String destinationStopId,
+    required String favoriteLabel
+  }) async {
+    final url = Uri.parse('${baseUrl}favorite/save');
+    final requestBody = jsonEncode({
+      'user_id': userId,
+      'stop_id_start': originStopId,
+      'stop_id_destination': destinationStopId,
+      'favorite_label': favoriteLabel,
+    });
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: requestBody
+    );
+    return _processResponse(response, requestBody);
+  }
+
+  static Future<List<dynamic>> getFavorites({
+    required String userId
+  }) async {
+    final url = Uri.parse('${baseUrl}favorite/$userId');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+    return _processResponse(response);
+  }
+
+  static Future<dynamic> submitFeedback({
+    required String userId,
+    required String feedback,
+    required int rating
+  }) async {
+    final url = Uri.parse('${baseUrl}feedback/save');
+    final requestBody = jsonEncode({
+      'passenger_id': userId,
+      'feedback': feedback,
+      'rating': rating,
+    });
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: requestBody
+    );
+    return _processResponse(response);
+  }
+
+  static Future<dynamic> clearAllFavorites({
+    required String userId,
+  }) async {
+    final url = Uri.parse('${baseUrl}favorite/delete');
+    final requestBody = jsonEncode({
+      'user_id': userId,
+    });
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: requestBody
+    );
+    return _processResponse(response);
+  }
+
+  static Future<dynamic> editProfile({
+    required String userId,
+    required String role,
+    required String profileImage,
+  }) async {
+    final url = Uri.parse('${baseUrl}profile/edit');
+    final requestBody = jsonEncode({
+      'user_id': userId,
+      'role': role,
+      'profile_image': profileImage,
+    });
+    final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: requestBody
+    );
+    return _processResponse(response, requestBody);
   }
 
   static String _getFutureDateTime(){

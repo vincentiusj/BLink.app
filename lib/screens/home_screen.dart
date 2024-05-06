@@ -1,3 +1,4 @@
+import 'package:blink_application/models/favorite_model.dart';
 import 'package:blink_application/models/location_model.dart';
 import 'package:blink_application/models/user_model.dart';
 import 'package:blink_application/res/colors.dart';
@@ -6,7 +7,7 @@ import 'package:blink_application/util/global_contans.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import 'package:google_fonts/google_fonts.dart';
 import '../models/place_model.dart';
 import '../models/stop_model.dart';
 import '../repository/api_service.dart';
@@ -23,15 +24,25 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  Stop? nearestStopFromHere;
 
   @override
   void initState() {
     super.initState();
+    _initializeData();
+
+  }
+  Future<void> _initializeData() async {
+    var nearestStopFromHere = await _getNearestStopFromHere();
+    setState(() {
+      this.nearestStopFromHere = nearestStopFromHere;
+    });
   }
   @override
   Widget build(BuildContext context) {
     var user = widget.loggedInUser;
 
+    logger.d('home $user');
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -39,15 +50,15 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text('Hi, ${user.fullName}',
-                style: const TextStyle(fontSize: 16.0)),
+                style: GoogleFonts.permanentMarker(),),
             const Text('Go somewhere?',
                 style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.w500)),
             const SizedBox(height: 10.0),
             SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: (){
-                    navigateToSearchScreen(null, null);
+                  onPressed: ()  {
+                    navigateToSearchScreen(nearestStopFromHere, null);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.orangeSoft,
@@ -60,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(Icons.search, color: AppColors.teaBrown),
                       SizedBox(width: 8.0),
                       Text(
-                          'Search bus stop destination',
+                          'Search Bus Stop',
                           style: TextStyle(color: AppColors.teaBrown, fontWeight: FontWeight.w200)
                       )
                     ],
@@ -68,7 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
             ),
             const SizedBox(height: 10.0),
-            const Text('Places For You', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.w500)),
+            _generateFavoriteListView(user),
+            const SizedBox(height: 15.0),
+            const Text('Around BSD', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.w500)),
             _generatePlaceListView(),
           ],
         ),
@@ -94,8 +107,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 if(placeList != null){
                   return Column(
                       children: [
+                        _generatePlaceCards(placeList),
                         const SizedBox(height: 16.0),
-                        _generatePlaceCards(placeList)
                       ]
                   );
                 } else {
@@ -116,102 +129,13 @@ class _HomeScreenState extends State<HomeScreen> {
             Place place = placeList[index];
             return GestureDetector(
               onTap: () async {
-                Position position = await Geolocator.getCurrentPosition(
-                  desiredAccuracy: LocationAccuracy.high,
-                );
-
-                var currentLocation = Location(latitude: position.latitude.toString(), longitude: position.longitude.toString());
-                var nearestStopFromHere = await _getNearestStopFromHere(currentLocation);
-                var nearestStopFromPlace = await DatabaseHelper.getStopById(place.stopId);
-
-                logger.d('_generatePlaceCards $currentLocation | $nearestStopFromPlace | $nearestStopFromHere');
-
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {
-                    return AlertDialog(
-                      backgroundColor: AppColors.teaBrown,
-                      actions: <Widget>[
-                        ButtonBar(
-                          alignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Icon(
-                                Icons.close_fullscreen,
-                                color: AppColors.orangeSoft,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Center(child: Text(
-                            place.placeTitle,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.orangeSoft
-                            ),
-                          )),
-                          SizedBox(height: 16),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8.0),
-                            child: Image.network(
-                              place.placeImage,
-                              fit: BoxFit.cover,
-                              height: 200,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          SizedBox(height: 16),
-                          FutureBuilder(
-                              future: DatabaseHelper.getStopById(place.stopId),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
-                                  return const Center(child: CircularProgressIndicator());
-                                } else if (snapshot.hasError) {
-                                  return Center(child: Text('Error: ${snapshot.error}'));
-                                } else {
-                                  Stop? stop = snapshot.data;
-                                  if(stop != null){
-                                    return ElevatedButton(
-                                        onPressed: () {
-                                          navigateToSearchScreen(nearestStopFromHere, nearestStopFromPlace);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.orangeSoft,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(50),
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                          children: [
-                                            Text('Go To ', style: TextStyle(color: AppColors.teaBrown)),
-                                            SizedBox(width: 10,),
-                                            Icon(Icons.directions_bus_filled, color: AppColors.teaBrown),
-                                            SizedBox(width: 10,),
-                                            Text(stop.stopName, style: TextStyle(color: AppColors.teaBrown),),
-                                          ],
-                                        )
-                                    );
-                                  } else {
-                                    return Text('No Stop Available');
-                                  }
-                                }
-                              }
-                          ),
-                        ],
-                      ),
-                    );
+                    return showPlaceDialog(place);
                   },
                 );
+
               },
               child: Card(
                 elevation: 4,
@@ -264,13 +188,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             );
-
           },
         )
     );
   }
 
-  Future<Stop?> _getNearestStopFromHere(Location currentLocation) async {
+  Future<Stop?> _getNearestStopFromHere() async {
+    logger.d('nearestStopFromHere');
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    var currentLocation = Location(latitude: position.latitude.toString(), longitude: position.longitude.toString());
+    logger.d('nearestStopFromHere $currentLocation');
+
     Stop? nearestStop;
     double minDistance = double.infinity;
 
@@ -288,6 +219,64 @@ class _HomeScreenState extends State<HomeScreen> {
     return nearestStop;
   }
 
+  Widget _generateFavoriteListView(User user){
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 0),
+      child: FutureBuilder(
+          future: _getFavoriteList(user),
+          builder: (context, snapshot){
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            } else if (snapshot.hasError) {
+              return Center(
+                child: Text('Error: ${snapshot.error}'),
+              );
+            } else {
+              List<Favorite>? favoriteList = snapshot.data;
+              if(favoriteList != null && favoriteList.isNotEmpty){
+                return Container(
+                  height: 40,
+                  child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: favoriteList.length,
+                      itemBuilder: (context, index) {
+                        Favorite? favorite = favoriteList[index];
+                        return Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 5),
+                            child: ElevatedButton(
+                              onPressed: (){
+                                redirectToSearchScreen(favorite);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.teaBrown,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.bookmark, color: AppColors.orangeSoft),
+                                  SizedBox(width: 8.0),
+                                  Text(
+                                      favorite.favoriteLabel,
+                                      style: TextStyle(color: AppColors.orangeSoft, fontWeight: FontWeight.w300)
+                                  )
+                                ],
+                              ),
+                            )
+                        );
+                      }
+                  ),
+                );
+              }else {
+                return Container(height: 0,);
+              }
+            }
+          }),
+    );
+  }
 
   Future<List<Place>?> _getPlaceList() async {
     try {
@@ -298,6 +287,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return placeList;
     } catch (e) {
       print('_getPlaceList failed: $e');
+    }
+  }
+
+  Future<List<Favorite>?> _getFavoriteList(User user) async {
+    try {
+      var jsonResponse = await ApiService.getFavorites(userId: user.userId);
+      List<Favorite> favoriteList = jsonResponse.map((json) => Favorite.fromJson(json)).toList();
+      logger.d('_getFavoriteList $favoriteList');
+      return favoriteList;
+    } catch (e) {
+      print('_getFavoriteList failed: $e');
     }
   }
 
@@ -316,4 +316,128 @@ class _HomeScreenState extends State<HomeScreen> {
   void navigateToStopsScreen() {
     Navigator.pushNamed(context, '/stops');
   }
+
+  void redirectToSearchScreen(Favorite favorite) async {
+    var originStop = await DatabaseHelper.getStopById(favorite.originStopId);
+    var destinationStop = await DatabaseHelper.getStopById(favorite.destinationStopId);
+
+    navigateToSearchScreen(originStop, destinationStop);
+  }
+
+  Widget showPlaceDialog(Place place) {
+    return FutureBuilder (
+        future: _getStopPair(place.stopId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text('Error: ${snapshot.error}'),
+            );
+          } else {
+            var stopPair = snapshot.data;
+            var nearestStopFromHere = stopPair?['stop1'];
+            var nearestStopFromPlace = stopPair?['stop2'];
+
+            if(stopPair != null){
+              return AlertDialog(
+                backgroundColor: AppColors.teaBrown,
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Align(
+                        alignment: Alignment.center,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Icon(
+                            Icons.close_fullscreen,
+                            color: AppColors.orangeSoft,
+                          ),
+                        )
+                    ),
+                    Center(child: Text(
+                      place.placeTitle,
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.orangeSoft
+                      ),
+                    )),
+                    SizedBox(height: 16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.0),
+                      child: Image.network(
+                        place.placeImage,
+                        fit: BoxFit.cover,
+                        height: 200,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    SizedBox(height: 16),
+                    FutureBuilder(
+                        future: DatabaseHelper.getStopById(place.stopId),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Center(child: Text('Error: ${snapshot.error}'));
+                          } else {
+                            Stop? stop = snapshot.data;
+                            if(stop != null){
+                              return ElevatedButton(
+                                  onPressed: () {
+                                    navigateToSearchScreen(nearestStopFromHere, nearestStopFromPlace);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.orangeSoft,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(50),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Text('Go To ', style: TextStyle(color: AppColors.teaBrown)),
+                                      SizedBox(width: 10,),
+                                      Icon(Icons.directions_bus_filled, color: AppColors.teaBrown),
+                                      SizedBox(width: 10,),
+                                      Text(stop.stopName, style: TextStyle(color: AppColors.teaBrown),),
+                                    ],
+                                  )
+                              );
+                            } else {
+                              return Text('No Stop Available');
+                            }
+                          }
+                        }
+                    ),
+                  ],
+                ),
+              );
+
+            }
+            else{
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+          }
+        }
+    );
+  }
+
+  Future<Map<String, Stop?>> _getStopPair(String placeStopId) async {
+    var nearestStopFromHere = await _getNearestStopFromHere();
+    var nearestStopFromPlace = await DatabaseHelper.getStopById(placeStopId);
+    return {'stop1': nearestStopFromHere, 'stop2': nearestStopFromPlace};
+  }
+
+
 }
+
+

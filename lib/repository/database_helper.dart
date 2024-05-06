@@ -59,7 +59,7 @@ class DatabaseHelper {
             id TEXT PRIMARY KEY,
             routeId TEXT,
             stopName TEXT,
-            'order' TEXT,
+            'order' INTEGER,
             latitude TEXT,
             longitude TEXT,
             FOREIGN KEY (routeId) REFERENCES Route(routeId)
@@ -248,6 +248,20 @@ class DatabaseHelper {
     // await db.close();
 
     return routes;
+  }
+
+  static Future<List<Stop>> searchStopsInRoute(String routeId, int originOrder, int destinationOrder) async {
+    final db = await database;
+
+    List<Map<String, dynamic>> maps = await db.rawQuery('''
+    SELECT * FROM $stopTable WHERE routeId = ? AND  "order" >= ? AND "order" <= ? ORDER BY "order" ASC
+    ''', [routeId, originOrder, destinationOrder]);
+
+    logger.d('setStopListForMaps db $maps');
+
+    List<Stop> stops = maps.map((result) => Stop.fromMap(result)).toList();
+
+    return stops;
   }
 
   static Future<List<Bus>> getBusesFromRouteId(String routeId) async {

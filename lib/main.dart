@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:blink_application/repository/user_data.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'util/global_contans.dart';
 import 'models/location_model.dart';
 import 'models/user_model.dart';
@@ -72,9 +73,12 @@ class _MyAppState extends State<MyApp> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return SplashScreen();
                   } else {
-                    final isInitUserSuccessful = snapshot.data ?? false;
+                    final loggedInUser = snapshot.data;
 
-                    if(isInitUserSuccessful){
+                    logger.d('home isInitUserSuccessful $loggedInUser');
+                    if(loggedInUser != null){
+                      this.loggedInUser = loggedInUser;
+
                       return MaterialApp(
                           title: 'BLink',
                           initialRoute: '/',
@@ -88,7 +92,7 @@ class _MyAppState extends State<MyApp> {
                           theme: ThemeData(
                             primarySwatch: Colors.orange,
                             visualDensity: VisualDensity.adaptivePlatformDensity,
-                            fontFamily: 'Montserrat',
+                            textTheme: GoogleFonts.rubikTextTheme()
                           )
                       );
                     } else{
@@ -119,15 +123,13 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<bool>_initLoggedInUser() async {
+  Future<User?> _initLoggedInUser() async {
     try{
       var loggedInUser = await getLoggedInUser();
       logger.d('login1 ${loggedInUser.toString()}');
-      this.loggedInUser = loggedInUser;
-      return true;
+      return loggedInUser;
     }catch(e){
       logger.d('_initLoggedInUser $e');
-      return false;
     }
   }
 

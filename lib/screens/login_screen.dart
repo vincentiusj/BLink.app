@@ -1,4 +1,5 @@
 import 'package:blink_application/repository/user_data.dart';
+import 'package:blink_application/res/colors.dart';
 import 'package:blink_application/screens/registration_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -23,10 +24,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   Future<void> _loginUser(void Function() navigateToHome) async {
-    // setState(() {
-    //   navigateToHome();
-    //   widget.onLoginSuccess();
-    // });
     try {
       var jsonResponse = await ApiService.loginUser(
         emailOrPhone: _emailController.text,
@@ -36,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // store logged in user to shared pref
       var user = User.fromJson(jsonResponse, _emailController.text);
       logger.d('login2 ${user.toString()}');
-      storeLoggedInUser(user);
+      await storeLoggedInUser(user);
 
       setState(() {
         widget.onLoginSuccess();
@@ -74,13 +71,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     decoration: InputDecoration(
                       hintText: 'Email',
-                      prefixIcon: Icon(Icons.email, color: Colors.orange),
+                      prefixIcon: Icon(Icons.email, color: AppColors.orangeSoft),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.orange), // Change border color here
+                          borderSide: BorderSide(color: AppColors.orangeSoft), // Change border color here
                         ),
                       filled: true,
                       fillColor: Colors.orange[50]
@@ -101,13 +98,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: true,
                     decoration: InputDecoration(
                       hintText: 'Password',
-                      prefixIcon: Icon(Icons.lock, color: Colors.orange),
+                      prefixIcon: Icon(Icons.lock, color: AppColors.orangeSoft),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.orange), // Change border color here
+                          borderSide: BorderSide(color: AppColors.orangeSoft), // Change border color here
                         ),
 
                       filled: true,
@@ -134,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: Text('Login'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
+                      backgroundColor: AppColors.orangeSoft,
                       padding: EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -159,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Text(
                           'Register',
                           style: TextStyle(
-                            color: Colors.orange,
+                            color: AppColors.orangeSoft,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
