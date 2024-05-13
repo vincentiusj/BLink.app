@@ -2,7 +2,9 @@ import 'package:blink_application/models/transaction_model.dart';
 import 'package:blink_application/res/colors.dart';
 import 'package:blink_application/screens/screens.dart';
 import 'package:blink_application/screens/stops_screen.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 
 import '../models/user_model.dart';
@@ -24,15 +26,31 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
   bool _tappedIn = false;
   String? _transactionId;
   late AnimationController _animationController;
+  static const platform = MethodChannel('tap_bus_channel');
+  String _nfcData = '';
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    _initPlatformState();
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 500),
     )..repeat(reverse: true);
+  }
+
+  // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> _initPlatformState() async {
+    platform.setMethodCallHandler(_handleMethod);
+  }
+
+  Future<void> _handleMethod(MethodCall call) async {
+    if (call.method == 'onNfcDetected') {
+      setState(() {
+        _nfcData = call.arguments;
+      });
+    }
   }
 
   @override
@@ -51,7 +69,7 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
           child: Image.asset('assets/images/logo_blink_app.png'),
         ),
       ),
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: IndexedStack(
         index: _selectedIndex,
         children: [
@@ -62,51 +80,82 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
         ],
       ),
       bottomNavigationBar: BottomAppBar(
+        padding: EdgeInsets.fromLTRB(0, 0, 0, 16.0),
         shape: CircularNotchedRectangle(),
         color: AppColors.orangeSoft,
         notchMargin: 8.0,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: <Widget>[
-            IconButton(
-              icon: Icon(Icons.home),
-              onPressed: () {
-                setState(() {
-                  _selectedIndex = 0;
-                });
-              },
-              color: _selectedIndex == 0 ? Colors.white : AppColors.teaBrown,
+            SizedBox(width: 0.2,),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.home),
+                  onPressed: () {
+                    setState(() {
+                      _selectedIndex = 0;
+                    });
+                  },
+                  color: _selectedIndex == 0 ? Colors.white : AppColors.teaBrown,
+                ),
+                Text('Home', style: TextStyle(fontSize: 10, color: AppColors.teaBrown),)
+              ],
             ),
-            IconButton(
-              icon: Icon(Icons.route),
-              onPressed: () {
-                setState(() {
-                  _selectedIndex = 1;
-                });
-              },
-              color: _selectedIndex == 1 ? Colors.white : AppColors.teaBrown,
+            SizedBox(width: 0.2,),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.route),
+                  onPressed: () {
+                    setState(() {
+                      _selectedIndex = 1;
+                    });
+                  },
+                  color: _selectedIndex == 1 ? Colors.white : AppColors.teaBrown,
+                ),
+                Text('Route', style: TextStyle(fontSize:10, color: AppColors.teaBrown)),
+              ],
             ),
-            SizedBox(width: 40.0),
-            IconButton(
-              icon: Icon(Icons.call),
-              onPressed: () {
-                setState(() {
-                  _selectedIndex = 2;
+            SizedBox(width: 60.0),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.call),
+                  onPressed: () {
+                    setState(() {
+                      _selectedIndex = 2;
 
-                });
-              },
-              color: _selectedIndex == 2 ? Colors.white : AppColors.teaBrown,
+                    });
+                  },
+                  color: _selectedIndex == 2 ? Colors.white : AppColors.teaBrown,
 
+                ),
+                Text('Emergency', style: TextStyle(fontSize: 10, color: AppColors.teaBrown))
+              ],
             ),
-            IconButton(
-              icon: Icon(Icons.person),
-              onPressed: () {
-                setState(() {
-                  _selectedIndex = 3;
-                });
-              },
-              color: _selectedIndex == 3 ? Colors.white : AppColors.teaBrown,
+            SizedBox(width: 0.2,),
+
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.person),
+                  onPressed: () {
+                    setState(() {
+                      _selectedIndex = 3;
+                    });
+                  },
+                  color: _selectedIndex == 3 ? Colors.white : AppColors.teaBrown,
+                ),
+                Text('Profile', style: TextStyle(fontSize: 10, color: AppColors.teaBrown))
+              ],
             ),
+            SizedBox(width: 0.2,),
+
           ],
         ),
 
@@ -184,6 +233,8 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
 
             // Process NFC tag, When an NFC tag is discovered, print its data to the console
             Ndef? ndef = Ndef.from(tag);
+            logger.d('NFC detected $ndef');
+
             var message = ndef?.cachedMessage;
             for(var record in message!.records){
               var stringPayload = String.fromCharCodes(record.payload).substring(3);
@@ -215,24 +266,17 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
             Navigator.of(context).pop();
           });
           return AlertDialog(
-            title: Icon(Icons.check_circle, color: Colors.green, size: 48),
-            actions: <Widget>[
-              ButtonBar(
-                alignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Icon(
-                      Icons.close_fullscreen,
-                      color: AppColors.orangeSoft,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            content: Text('Successful $tapType', style: TextStyle(fontSize: 18)),
+
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, color: Colors.green, size: 48),
+                Align(
+                  alignment: Alignment.center,
+                  child: Text('Successful $tapType', style: TextStyle(fontSize: 18)),
+                ),
+              ],
+            ),
           );
         }
     );

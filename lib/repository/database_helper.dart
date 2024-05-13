@@ -261,6 +261,8 @@ class DatabaseHelper {
 
     List<Stop> stops = maps.map((result) => Stop.fromMap(result)).toList();
 
+    logger.d('setStopListForMaps db $stops');
+
     return stops;
   }
 
@@ -275,6 +277,23 @@ class DatabaseHelper {
     List<Bus> buses = results.map((result) => Bus.fromMap(result)).toList();
 
     return buses;
+  }
+
+  static Future<RouteModel?> getRouteFromRouteId(String routeId) async {
+    final db = await database;
+
+    List<Map<String, dynamic>> results = await db.rawQuery('''
+    SELECT * FROM $routeTable WHERE id = ?
+    ''', [routeId]);
+
+    logger.d('getRouteFromRouteId: $results');
+
+    if(results.isNotEmpty){
+      return RouteModel.fromMap(results.first);
+    }
+
+// Process the results and convert them into Route objects
+
   }
 
   static Future<void> captureDatabase() async {

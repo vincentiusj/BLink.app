@@ -18,4 +18,9 @@ class Location {
         longitude: maps['longitude']
     );
   }
+
+  @override
+  String toString() {
+    return 'Location: latitude: $latitude , longitude: $longitude';
+  }
 }

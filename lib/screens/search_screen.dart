@@ -4,11 +4,13 @@ import 'package:blink_application/models/bus_model.dart';
 import 'package:blink_application/models/route_model.dart';
 import 'package:blink_application/repository/api_service.dart';
 import 'package:blink_application/res/colors.dart';
+import 'package:blink_application/util/calculate_distance.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import '../dialogs/Info_Item.dart';
 import '../models/distance_route.dart';
 import '../models/location_model.dart';
 import '../models/stop_model.dart';
@@ -34,6 +36,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Stop> stopList = [];
   Bus? upcomingBus;
   bool isFavoritePlace = false;
+  RouteModel? thisBusRoute;
   Set<Polyline> _polylines = {};
 
   late GoogleMapController mapController;
@@ -60,33 +63,38 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Image.asset('assets/images/logo_blink_app.png'),
           ),
         ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-        child: Stack(
-            children: [
-              Column(children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+            maintainBottomViewPadding: true,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 15.0),
+              child: Stack(
                   children: [
-                  const Text(
-                    'Where to?',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  if(_searchFilledState() && !isFavoritePlace) _buildAddToFavorite(),
-                ],),
-                SizedBox(height: 10.0),
-                _buildStartEndSearchField(),
-                SizedBox(height: 10.0),
-                if(_searchFilledState()) _buildMapsView(),
-              ],),
-              if(_searchFilledState()) _buildBusArrivalListView()
-            ]
-        ),
-      )
+                    Column(children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Where to?',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          if(_searchFilledState() && !isFavoritePlace) _buildAddToFavorite(),
+                        ],),
+                      SizedBox(height: 10.0),
+                      _buildStartEndSearchField(),
+                      SizedBox(height: 10.0),
+                      if(_searchFilledState()) _buildMapsView(),
+                    ],),
+                    if(_searchFilledState()) _buildBusArrivalListView()
+                  ]
+              ),
+            )
+        )
+
     );
   }
 
@@ -196,7 +204,7 @@ class _SearchScreenState extends State<SearchScreen> {
     var destinationLongitude = double.tryParse(destination?.location?.longitude ?? '0.0') ?? 0.0;
 
     return Container(
-      height: MediaQuery.of(context).size.height - 300,
+      height: MediaQuery.of(context).size.height - 350,
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.0),
@@ -219,11 +227,11 @@ class _SearchScreenState extends State<SearchScreen> {
           onMapCreated: (controller) {
             logger.d('onMapCreated $origin $destination');
             mapController = controller;
-            setStopListForMaps();
+            // setStopListForMaps();
           },
           polylines: _polylines,
           trafficEnabled: true,
-          mapType: MapType.satellite,
+          mapType: MapType.hybrid,
           markers: {
             Marker(
                 markerId: MarkerId(origin!.stopId),
@@ -257,14 +265,14 @@ class _SearchScreenState extends State<SearchScreen> {
             );
           } else {
             List<Bus>? upcomingBusList = snapshot.data;
+            // List<Bus>? upcomingBusList = [Bus(busId: 'Bus1', routeId: 'Rute 1', busType: 'Conventional', busColor: 'Oren', plateNumber: 'B 1112 AA')];
 
             if(upcomingBusList != null && upcomingBusList.isNotEmpty){
               logger.d('onMapCreated2 $origin $destination');
 
-
               return Positioned(
                   bottom: 0,
-                  top: MediaQuery.of(context).size.height - 180,
+                  top: MediaQuery.of(context).size.height - 220,
                   left: 15,
                   right: 15,
                   child: Container(
@@ -280,61 +288,92 @@ class _SearchScreenState extends State<SearchScreen> {
                           Bus? upcomingBus = upcomingBusList[index];
                           this.upcomingBus = upcomingBus;
                           setStopListForMaps();
+                          getRouteFromRouteId(upcomingBus.routeId);
+
                             return Card(
                               elevation: 2,
-                              margin: EdgeInsets.symmetric(vertical: 8),
+                               margin: EdgeInsets.symmetric(vertical: 8),
                               child: ListTile(
                               title: Text(
-                                upcomingBus.plateNumber,
+                                thisBusRoute?.routeName ?? 'Route 1',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               subtitle: Text('Arrived in ${upcomingBus.latestETA}'),
                               trailing: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.orangeSoft,
+                                ),
+                                child: const Icon(Icons.info_outline, color: Colors.white,),
                                 onPressed: () {
                                   setState(() {
                                     logger.d('onMapCreated3 $origin $destination');
 
                                     setStopListForMaps();
-
-                                    showBottomSheet(context: context, builder: (BuildContext){
+                                    showBottomSheet(context: context, builder: (context){
                                       return ClipRRect(
                                           borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
                                           child: Container(
-                                            height: 250,
+                                            height: 220,
                                             width: 500,
-                                            color: AppColors.orangeSoft.withOpacity(0.5),
+                                            color: AppColors.orangeSoft.withOpacity(0.9),
                                             child: Column(
                                               children: [
                                                 Container(
                                                   padding: EdgeInsets.all(16.0),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.orangeSoft.withOpacity(0.9), // Set opacity here (0.0 to 1.0)
+                                                    borderRadius: BorderRadius.only(
+                                                      topLeft: Radius.circular(20),
+                                                      topRight: Radius.circular(20),
+                                                    ),
+                                                  ),
                                                   child: Column(
+                                                    mainAxisSize: MainAxisSize.min,
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
-                                                      SizedBox(height: 16.0),
-                                                      Card(
-                                                        elevation: 2,
-                                                        child: Padding(
-                                                          padding: EdgeInsets.all(16.0),
-                                                          child: Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                            children: [
-                                                              Text(
-                                                                'Bus Plate Number: ${upcomingBus.plateNumber}',
-                                                                style: TextStyle(
-                                                                  fontSize: 16.0,
-                                                                  fontWeight: FontWeight.bold,
-                                                                ),
-                                                              ),
-                                                              SizedBox(height: 8.0),
-                                                              Text('${upcomingBus.busColor}'),
-                                                              Text('${upcomingBus.busType}'),
-                                                              Text('Passenger Count: ${upcomingBus.passengerCount}'),
-                                                            ],
-                                                          ),
-                                                        ),
+                                                      Align(
+                                                        alignment: Alignment.topRight,
+                                                        child: Icon(Icons.arrow_downward, color: Colors.black87,),
                                                       ),
+                                                      Padding(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                                        child: Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          children: [
+                                                            Text(
+                                                              'Route Information',
+                                                              style: TextStyle(
+                                                                fontSize: 18,
+                                                                fontWeight: FontWeight.bold,
+                                                                color: Colors.black87,
+                                                              ),
+                                                            ),
+                                                            SizedBox(height: 10),
+                                                            InfoItem(
+                                                              label: 'Route Name',
+                                                              value: thisBusRoute?.routeName ?? 'Route 1',
+                                                            ),
+                                                            InfoItem(
+                                                              label: 'Bus Plate Number',
+                                                              value: upcomingBus.plateNumber,
+                                                            ),
+                                                            InfoItem(
+                                                              label: 'Bus Color',
+                                                              value: 'Red',
+                                                            ),
+                                                            InfoItem(
+                                                              label: 'Bus Type',
+                                                              value: upcomingBus.busType,
+                                                            ),
+                                                            InfoItem(
+                                                              label: 'Passenger Count',
+                                                              value: '${upcomingBus.passengerCount} Passengers',
+                                                            ),
+                                                          ],
+                                                        )
+                                                      )
                                                     ],
                                                   ),
                                                 ),
@@ -345,13 +384,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                     });
                                   });
                                 },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange,
-                                  // shape: RoundedRectangleBorder(
-                                  //   borderRadius: BorderRadius.circular(8),
-                                  // ),
-                                ),
-                                child: const Icon(Icons.info_outline, color: Colors.white,),
                               ),
                             ),
                           );
@@ -421,7 +453,7 @@ class _SearchScreenState extends State<SearchScreen> {
         // hit the gmaps api per bus, using current location, get the duration between bus current location and the origin stop
         // if(bus.currentLocation != null){
         var distanceRoute = await _getDistanceRoute(bus.currentLocation!);
-        bus.latestETA = distanceRoute?.first.duration;
+        bus.latestETA = secondsToMinutes(distanceRoute?.first.duration ?? '');
         // }else{
         //   throw Exception('No Activity');
         // }
@@ -585,6 +617,16 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Future<void> getRouteFromRouteId(String routeId) async{
+    try{
+      thisBusRoute = await DatabaseHelper.getRouteFromRouteId(routeId);
+      logger.d('getRouteFromRouteId $thisBusRoute');
+
+    }catch(e){
+      logger.d('getRouteFromRouteId failed $e');
+    }
+  }
+
   Future<void> setStopListForMaps() async {
 
     stopList.clear();
@@ -594,20 +636,24 @@ class _SearchScreenState extends State<SearchScreen> {
 
     var stopListFuture = await DatabaseHelper.searchStopsInRoute(upcomingBus!.routeId, origin!.order, destination!.order);
 
-
-    logger.d('setStopListForMaps ${upcomingBus!.plateNumber} $stopListFuture');
     stopList.addAll(stopListFuture);
-    var stopOrder = stopList.map((e) => e.order);
-    logger.d('setStopListForMaps order $stopOrder');
+
+    List<Location> stopLocation = [];
+    for(var stop in stopList){
+      logger.d('setStopListForMaps stop  ${stop.location.toString()}');
+      stopLocation.add(stop.location!);
+    }
+    // stopList.map((e) => e.location ?? Location(latitude: '', longitude: '')).toList();
 
 
-    var polylineCoordinates = stopList.map((stop) =>
-        LatLng(
-            double.tryParse(stop.location?.latitude ?? '0.0')  ?? 0.0,
-            double.tryParse(stop.location?.longitude ?? '0.0')  ?? 0.0
-        )
-    ).toList();
+    var polylineCoordinates = await ApiService.getPolylinesWithDirectionsAPI(stopLocation);
 
+    // var polylineCoordinates = stopList.map((stop) =>
+    //     LatLng(
+    //         double.tryParse(stop.location?.latitude ?? '0.0')  ?? 0.0,
+    //         double.tryParse(stop.location?.longitude ?? '0.0')  ?? 0.0
+    //     )
+    // ).toList();
     _polylines.clear();
     _polylines.add(Polyline(
       polylineId: PolylineId(stopList.first.stopId),
@@ -615,6 +661,13 @@ class _SearchScreenState extends State<SearchScreen> {
       color: AppColors.orangeSoft,
       width: 4,
     ));
+    // setState(() {
+    //
+    // });
   }
+
+
+
+
 
 }

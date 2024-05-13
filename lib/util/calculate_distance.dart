@@ -29,3 +29,11 @@ extension on num {
     return degreesToRadians(this.toDouble());
   }
 }
+
+String secondsToMinutes(String secondsString) {
+  String numericPart = secondsString.substring(0, secondsString.length - 1);
+  int seconds = int.parse(numericPart);
+  int minutes = seconds ~/ 60;
+  int remainingSeconds = seconds % 60;
+  return '$minutes,${remainingSeconds.toString().padLeft(2, '0')} min';
+}

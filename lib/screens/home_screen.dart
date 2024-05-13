@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 10.0),
             _generateFavoriteListView(user),
             const SizedBox(height: 15.0),
-            const Text('Around BSD', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.w500)),
+            Text('Strolling around BSD', style: GoogleFonts.permanentMarker()),
             _generatePlaceListView(),
           ],
         ),
@@ -302,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void navigateToSearchScreen(Stop? originStop, Stop? destinationStop) {
-    Navigator.push(
+    Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
         builder: (context) => SearchScreen(
@@ -310,6 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
           destination: destinationStop,
         ),
       ),
+      ModalRoute.withName('/')
     );
   }
 

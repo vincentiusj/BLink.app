@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:blink_application/models/location_model.dart';
 import 'package:blink_application/models/stop_model.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+
 
 import '../util/global_contans.dart';
 import '../models/bus_model.dart';
@@ -48,7 +51,7 @@ class ApiService {
       'phone_number': phoneNumber,
       'email': email,
       'password': password,
-      'role': "DRIVER",
+      'role': "PASSENGER",
     });
 
     final response = await http.put(
@@ -66,7 +69,7 @@ class ApiService {
     required String emailOrPhone,
     required String password,
   }) async {
-    final url = Uri.parse(baseUrl + 'login');
+    final url = Uri.parse(baseUrl + 'login-mobile');
     final requestBody = jsonEncode({
       'email': emailOrPhone,
       'password': password,
@@ -364,6 +367,87 @@ class ApiService {
     );
     return _processResponse(response, requestBody);
   }
+
+  static Future<dynamic> getPolylinesWithDirectionsAPI(List<Location> stopLocationList) async {
+    const apiKey = 'AIzaSyC7uRjGhqPKd-LuW799pNroEqta2c0ER_s';
+
+
+    logger.d('getPolylinesWithDirectionsAPI length  ${stopLocationList.length}');
+
+    var pointList = [];
+    for (int i = 0; i < stopLocationList.length - 1; i++) {
+      logger.d('getPolylinesWithDirectionsAPI stop  ${stopLocationList[i].latitude}');
+      logger.d('getPolylinesWithDirectionsAPI stop  ${stopLocationList[i].longitude}');
+
+
+      var url = 'https://maps.googleapis.com/maps/api/directions/json?';
+      var requestBody = 'origin=${stopLocationList[i].latitude},${stopLocationList[i].longitude}'
+          '&destination=${stopLocationList[i + 1].latitude},${stopLocationList[i + 1].longitude}'
+          '&key=$apiKey';
+      var request = url + requestBody;
+
+      logger.d('getPolylinesWithDirectionsAPI request $request');
+
+      final directions = await http.get(Uri.parse(request));
+
+      logger.d('getPolylinesWithDirectionsAPI ${directions.body} ${directions}');
+      logger.d('getPolylinesWithDirectionsAPI status code ${directions.statusCode}');
+
+
+      if (directions.statusCode == 200) {
+        final jsonDirection = json.decode(directions.body);
+        logger.d('getPolylinesWithDirectionsAPI ${jsonDirection.toString()}');
+
+        final route = jsonDirection['routes'][0];
+        logger.d('getPolylinesWithDirectionsAPI ${route.toString()}');
+
+        final points = route['overview_polyline']['points'];
+        logger.d('getPolylinesWithDirectionsAPI points ${points.toString()}');
+        final pointsDecoded = PolylinePoints().decodePolyline(points);
+        logger.d('getPolylinesWithDirectionsAPI decode points ${pointsDecoded}');
+
+        pointList.add(LatLng(pointsDecoded, lng / 1e5));
+      }
+    }
+    return pointList;
+  }
+
+  static List<LatLng> decodeEncodedPolyline(String encoded) {
+    List<LatLng> points = [];
+    int index = 0;
+    int len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      points.add(LatLng(lat / 1e5, lng / 1e5));
+    }
+
+    return points;
+  }
+
 
   static String _getFutureDateTime(){
     logger.d('_getFutureDateTime masuk');
