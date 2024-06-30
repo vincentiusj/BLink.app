@@ -1,14 +1,13 @@
 import 'dart:convert';
+
 import 'package:blink_application/models/location_model.dart';
-import 'package:blink_application/models/stop_model.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
-
-import '../util/global_contans.dart';
 import '../models/bus_model.dart';
+import '../util/global_contans.dart';
 
 class ApiService {
   static const String baseUrl = 'http://152.42.192.127:8086/';
@@ -406,7 +405,7 @@ class ApiService {
         final pointsDecoded = PolylinePoints().decodePolyline(points);
         logger.d('getPolylinesWithDirectionsAPI decode points ${pointsDecoded}');
 
-        pointList.add(LatLng(pointsDecoded, lng / 1e5));
+        pointList.add(pointsDecoded);
       }
     }
     return pointList;
