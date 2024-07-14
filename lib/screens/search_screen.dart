@@ -208,7 +208,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
 
     return Container(
-      height: MediaQuery.of(context).size.height - 350,
+      height: MediaQuery.of(context).size.height - 400,
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.0),
@@ -276,7 +276,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
               return Positioned(
                   bottom: 0,
-                  top: MediaQuery.of(context).size.height - 220,
+                  top: MediaQuery.of(context).size.height - 280,
                   left: 15,
                   right: 15,
                   child: Container(
@@ -673,7 +673,7 @@ class _SearchScreenState extends State<SearchScreen> {
           polylineId: PolylineId(stopList.first.stopId),
           points: polylineCoordinates!,
           color: AppColors.orangeSoft,
-          width: 4,
+          width: 6,
         ));
       });
     } else {
