@@ -38,6 +38,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool isFavoritePlace = false;
   RouteModel? thisBusRoute;
   Set<Polyline> _polylines = {};
+  bool isPolyLinesLoaded = false;
 
   late GoogleMapController mapController;
   final TextEditingController _favoriteLabelController = TextEditingController();
@@ -49,6 +50,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
+
     origin = widget.origin;
     destination = widget.destination;
     logger.d('initState $origin | $destination');
@@ -191,6 +193,7 @@ class _SearchScreenState extends State<SearchScreen> {
       }).toList(),
       onChanged: (value) {
         setState(() {
+          isPolyLinesLoaded = false;
           destination = stopList?.firstWhere((element) => element.stopId == value);
         });
       },
@@ -202,6 +205,7 @@ class _SearchScreenState extends State<SearchScreen> {
     var originLongitude = double.tryParse(origin?.location?.longitude ?? '0.0') ?? 0.0;
     var destinationLatitude = double.tryParse(destination?.location?.latitude ?? '0.0') ?? 0.0;
     var destinationLongitude = double.tryParse(destination?.location?.longitude ?? '0.0') ?? 0.0;
+
 
     return Container(
       height: MediaQuery.of(context).size.height - 350,
@@ -654,13 +658,28 @@ class _SearchScreenState extends State<SearchScreen> {
     //         double.tryParse(stop.location?.longitude ?? '0.0')  ?? 0.0
     //     )
     // ).toList();
-    _polylines.clear();
-    _polylines.add(Polyline(
-      polylineId: PolylineId(stopList.first.stopId),
-      points: polylineCoordinates!,
-      color: AppColors.orangeSoft,
-      width: 4,
-    ));
+
+    //
+    var originLatitude = double.tryParse(origin?.location?.latitude ?? '0.0') ?? 0.0;
+    var originLongitude = double.tryParse(origin?.location?.longitude ?? '0.0') ?? 0.0;
+
+    if(!isPolyLinesLoaded){
+      setState(() {
+        // _buildMapsView();
+        mapController.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
+            target: LatLng(originLatitude, originLongitude), zoom: 20.0)));
+        isPolyLinesLoaded = true;
+        _polylines.add(Polyline(
+          polylineId: PolylineId(stopList.first.stopId),
+          points: polylineCoordinates!,
+          color: AppColors.orangeSoft,
+          width: 4,
+        ));
+      });
+    } else {
+      _polylines.clear();
+    }
+
     // setState(() {
     //
     // });
