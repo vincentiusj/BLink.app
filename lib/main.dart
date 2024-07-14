@@ -60,30 +60,30 @@ class _MyAppState extends State<MyApp> {
       future: checkLoginStatus(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return SplashScreen();
+          return const CircularProgressIndicator();
         } else {
           final isAuthenticated = snapshot.data ?? false;
           this.isAuthenticated = isAuthenticated;
           logger.d('isAuthenticated $isAuthenticated');
           if (this.isAuthenticated) {
-            _initDriverActivity();
             return FutureBuilder(
                 future: _initLoggedInUser(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return SplashScreen();
+                    return const CircularProgressIndicator();
                   } else {
                     final loggedInUser = snapshot.data;
 
                     logger.d('home isInitUserSuccessful $loggedInUser');
                     if(loggedInUser != null){
                       this.loggedInUser = loggedInUser;
+                      _initDriverActivity();
 
                       return MaterialApp(
                           title: 'BLink',
                           initialRoute: '/',
                           routes: {
-                            '/': (context) => isAuthenticated ? NavScreen(loggedInUser: loggedInUser!, onLogout: onLogout) : SplashScreen(),
+                            '/': (context) => isAuthenticated ? NavScreen(loggedInUser: loggedInUser, onLogout: onLogout) : SplashScreen(),
                             '/login': (context) => LoginScreen(onLoginSuccess: onLoginSuccess),
                             '/register': (context) => RegistrationScreen(),
                             '/search': (context) => SearchScreen()
@@ -136,6 +136,9 @@ class _MyAppState extends State<MyApp> {
   void _initDriverActivity() async {
     logger.d('initDriverActivity ROLE ${loggedInUser?.role}');
     if(loggedInUser?.role == 'DRIVER'){
+      currentUserId = loggedInUser?.userId;
+      logger.d('initDriverActivity $currentUserId | $currentBusId');
+
       await AndroidAlarmManager.initialize();
       logger.d('initDriverActivity driver alarm');
       await AndroidAlarmManager.periodic(Duration(seconds: 30), 0, _hitBusActivityCheck);
@@ -153,8 +156,8 @@ class _MyAppState extends State<MyApp> {
       );
 
       await ApiService.busActivityCheck(
-        busId: 'fb40a8f3ff3211eeb79af875a4b62c55',
-        userId: '4804bca2-0828-11ef-8a9f-f6937a81e4a1',
+        busId: currentBusId,
+        userId: currentUserId,
         latitude: position.latitude.toString(),
         longitude: position.longitude.toString()
       );

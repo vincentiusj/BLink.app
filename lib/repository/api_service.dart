@@ -367,13 +367,12 @@ class ApiService {
     return _processResponse(response, requestBody);
   }
 
-  static Future<dynamic> getPolylinesWithDirectionsAPI(List<Location> stopLocationList) async {
+  static Future<List<LatLng>?> getPolylinesWithDirectionsAPI(List<Location> stopLocationList) async {
     const apiKey = 'AIzaSyC7uRjGhqPKd-LuW799pNroEqta2c0ER_s';
 
 
     logger.d('getPolylinesWithDirectionsAPI length  ${stopLocationList.length}');
 
-    var pointList = [];
     for (int i = 0; i < stopLocationList.length - 1; i++) {
       logger.d('getPolylinesWithDirectionsAPI stop  ${stopLocationList[i].latitude}');
       logger.d('getPolylinesWithDirectionsAPI stop  ${stopLocationList[i].longitude}');
@@ -402,13 +401,11 @@ class ApiService {
 
         final points = route['overview_polyline']['points'];
         logger.d('getPolylinesWithDirectionsAPI points ${points.toString()}');
-        final pointsDecoded = PolylinePoints().decodePolyline(points);
+        final pointsDecoded = PolylinePoints().decodePolyline(points).map((e) => LatLng(e.latitude, e.longitude)).toList();
         logger.d('getPolylinesWithDirectionsAPI decode points ${pointsDecoded}');
-
-        pointList.add(pointsDecoded);
+        return pointsDecoded;
       }
     }
-    return pointList;
   }
 
   static List<LatLng> decodeEncodedPolyline(String encoded) {

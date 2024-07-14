@@ -152,7 +152,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                   SizedBox(height: 20),
                   TextFormField(
-                    controller: _passwordController,
+                    controller: _confirmPasswordController,
                     obscureText: true,
                     decoration: InputDecoration(
                       hintText: 'Confirm Password',

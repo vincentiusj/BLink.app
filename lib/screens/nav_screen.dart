@@ -245,6 +245,7 @@ class _NavScreenState extends State<NavScreen> with SingleTickerProviderStateMix
             !_tappedIn ? _tapIn(busId) : _tapOut(busId, _transactionId!);
             Navigator.pop(context);
             setState(() {
+              currentBusId = busId;
               _tappedIn = !_tappedIn;
             });;
           },

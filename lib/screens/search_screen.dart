@@ -657,7 +657,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _polylines.clear();
     _polylines.add(Polyline(
       polylineId: PolylineId(stopList.first.stopId),
-      points: polylineCoordinates,
+      points: polylineCoordinates!,
       color: AppColors.orangeSoft,
       width: 4,
     ));
