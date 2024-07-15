@@ -148,7 +148,7 @@ class _MyAppState extends State<MyApp> {
   @pragma('vm:entry-point')
   static Future<void> _hitBusActivityCheck() async {
     final DateTime now = DateTime.now();
-    logger.d("[$now] Hello, world! This is a background task.");
+    logger.d("$currentUserId |  [$now] Hello, world! This is a background task.");
 
     try {
       Position position = await Geolocator.getCurrentPosition(
@@ -156,7 +156,7 @@ class _MyAppState extends State<MyApp> {
       );
 
       await ApiService.busActivityCheck(
-        busId: currentBusId,
+        busId: 'b76dc3c9ff3311eeb79af875a4b62c55',
         userId: currentUserId,
         latitude: position.latitude.toString(),
         longitude: position.longitude.toString()

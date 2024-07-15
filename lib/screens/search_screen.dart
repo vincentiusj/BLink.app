@@ -205,6 +205,8 @@ class _SearchScreenState extends State<SearchScreen> {
     var originLongitude = double.tryParse(origin?.location?.longitude ?? '0.0') ?? 0.0;
     var destinationLatitude = double.tryParse(destination?.location?.latitude ?? '0.0') ?? 0.0;
     var destinationLongitude = double.tryParse(destination?.location?.longitude ?? '0.0') ?? 0.0;
+    var upcomingLatitude = double.tryParse(upcomingBus?.currentLocation?.latitude ?? '0.0') ?? 0.0;
+    var upcomingLongitude = double.tryParse(upcomingBus?.currentLocation?.longitude ?? '0.0') ?? 0.0;
 
 
     return Container(
@@ -247,6 +249,12 @@ class _SearchScreenState extends State<SearchScreen> {
               markerId: MarkerId(destination!.stopId),
               position: LatLng(destinationLatitude, destinationLongitude),
               infoWindow: InfoWindow(title: destination?.stopName),
+            ),
+            Marker(
+              markerId: MarkerId(upcomingBus?.busId ?? ''),
+              position: LatLng(upcomingLatitude, upcomingLongitude),
+              infoWindow: InfoWindow(title: 'Bus coming'),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueMagenta)
             ),
           },
           myLocationEnabled: true,
@@ -408,7 +416,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<List<Bus>?> _generateUpcomingArrivals() async {
     if(_searchFilledState()){
-      try{
+      try{  
         var routeList = await DatabaseHelper.searchRoutes(origin!.stopId, destination!.stopId);
 
         logger.d('_generateUpcomingArrivals routeList ${routeList}');

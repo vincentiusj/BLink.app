@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:blink_application/models/favorite_model.dart';
 import 'package:blink_application/models/location_model.dart';
 import 'package:blink_application/models/user_model.dart';
@@ -5,6 +7,7 @@ import 'package:blink_application/res/colors.dart';
 import 'package:blink_application/screens/search_screen.dart';
 import 'package:blink_application/util/global_contans.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -34,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Future<void> _initializeData() async {
     var nearestStopFromHere = await _getNearestStopFromHere();
+
     setState(() {
       this.nearestStopFromHere = nearestStopFromHere;
     });
